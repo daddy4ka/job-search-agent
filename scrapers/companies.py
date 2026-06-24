@@ -85,7 +85,7 @@ def scrape_dataart() -> list[Job]:
     return []  # no public API found
 
 def scrape_playtika() -> list[Job]:
-    return []  # no public API found
+    return _scrape_greenhouse("playtikaltd", "Playtika", "Playtika")
 
 def scrape_wix() -> list[Job]:
     return []  # no public API found

@@ -1,4 +1,4 @@
-"""Main orchestrator — scrape → filter new → notify."""
+"""Main orchestrator — scrape all sources, filter new, notify."""
 from collections import defaultdict
 from datetime import datetime, timezone
 from config import SOURCES
@@ -7,43 +7,44 @@ from scrapers.djinni import scrape as scrape_djinni
 from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
     scrape_intellias, scrape_eleks, scrape_nix, scrape_lohika,
+    scrape_playtika,
 )
-from scrapers.boards import scrape_otta
+from scrapers.boards import scrape_weworkremotely, scrape_remoteco, scrape_relocate, scrape_otta
 from scrapers.playwright_scraper import (
-    scrape_weworkremotely, scrape_remoteco, scrape_relocate,
-    scrape_softserve, scrape_ciklum, scrape_epam,
-    scrape_globallogic, scrape_luxoft, scrape_dataart,
-    scrape_sigma, scrape_grammarly, scrape_wix, scrape_playtika,
+    scrape_epam, scrape_globallogic, scrape_luxoft,
+    scrape_softserve, scrape_ciklum, scrape_dataart,
+    scrape_sigma, scrape_grammarly, scrape_wix,
 )
 from tracker import filter_new, mark_seen
 from notifier import send_job, send_summary
 
 
 SCRAPERS = {
-    # UA outsourcers
-    "epam": scrape_epam,
-    "globallogic": scrape_globallogic,
-    "intellias": scrape_intellias,
-    "eleks": scrape_eleks,
-    "ciklum": scrape_ciklum,
-    "nix": scrape_nix,
-    "softserve": scrape_softserve,
-    "luxoft": scrape_luxoft,
-    "sigma": scrape_sigma,
-    "dataart": scrape_dataart,
-    "lohika": scrape_lohika,
-    "playtika": scrape_playtika,
-    "wix": scrape_wix,
-    "grammarly": scrape_grammarly,
+    # UA outsourcers — API-based (reliable)
+    "intellias":    scrape_intellias,    # Lever API
+    "eleks":        scrape_eleks,        # Lever API
+    "nix":          scrape_nix,          # Greenhouse API
+    "playtika":     scrape_playtika,     # Greenhouse API
+    # UA outsourcers — Playwright (JS-rendered)
+    "epam":         scrape_epam,
+    "globallogic":  scrape_globallogic,
+    "luxoft":       scrape_luxoft,
+    "softserve":    scrape_softserve,
+    "ciklum":       scrape_ciklum,
+    "dataart":      scrape_dataart,
+    "sigma":        scrape_sigma,
+    "grammarly":    scrape_grammarly,
+    "wix":          scrape_wix,
+    "lohika":       scrape_lohika,       # returns [] — no public API
     # UA job boards
-    "dou": scrape_dou,
-    "djinni": scrape_djinni,
-    "telegram": scrape_telegram,
-    "relocate": scrape_relocate,
-    # International remote boards
-    "weworkremotely": scrape_weworkremotely,
-    "remoteco": scrape_remoteco,
-    "otta": scrape_otta,
+    "dou":          scrape_dou,          # RSS search feeds
+    "djinni":       scrape_djinni,       # RSS category feeds
+    "telegram":     scrape_telegram,     # 4 Telegram channels
+    # International
+    "weworkremotely": scrape_weworkremotely,  # RSS
+    "remoteco":     scrape_remoteco,     # HTML via proxy
+    "relocate":     scrape_relocate,     # HTML via proxy
+    "otta":         scrape_otta,         # returns [] — API broken
 }
 
 
@@ -61,12 +62,12 @@ def run():
         print(f"[Scraper] {source}...")
         try:
             jobs = scraper()
-            print(f"  → {len(jobs)} jobs found")
+            print(f"  -> {len(jobs)} jobs found")
             all_jobs.extend(jobs)
             for job in jobs:
                 source_counts[job.source] += 1
         except Exception as e:
-            print(f"  → Error: {e}")
+            print(f"  -> Error: {e}")
 
     print(f"\nTotal scraped: {sum(source_counts.values())}")
 

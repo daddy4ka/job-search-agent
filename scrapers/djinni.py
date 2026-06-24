@@ -7,10 +7,12 @@ DJINNI_FEEDS = [
     "https://djinni.co/jobs/rss/?primary_keyword=Data+Analytics",
     "https://djinni.co/jobs/rss/?primary_keyword=Business+Intelligence",
     "https://djinni.co/jobs/rss/?primary_keyword=Product+Management",
+    "https://djinni.co/jobs/rss/?primary_keyword=Analytics",
+    "https://djinni.co/jobs/rss/?primary_keyword=Data+Engineer",
 ]
 
 
-def scrape() -> list[Job]:
+def scrape() -> list:
     jobs = []
     seen_ids = set()
 
@@ -38,4 +40,5 @@ def scrape() -> list[Job]:
         except Exception as e:
             print(f"[Djinni] Error fetching {feed_url}: {e}")
 
+    print(f"  [Djinni] {len(jobs)} jobs after title filter")
     return jobs

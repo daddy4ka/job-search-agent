@@ -1,4 +1,4 @@
-"""Playwright-based scraper for JS-heavy job sites."""
+"""Playwright-based scraper for JS-heavy company career pages."""
 import hashlib
 from bs4 import BeautifulSoup
 from scrapers.dou import Job, _title_match
@@ -8,7 +8,7 @@ def _make_id(source: str, url: str) -> str:
     return f"{source}_{hashlib.md5(url.encode()).hexdigest()[:12]}"
 
 
-def _get_html(url: str, wait_selector: str = "body", timeout: int = 25000) -> str:
+def _get_html(url: str, wait_selector: str = None, extra_wait_ms: int = 3000) -> str:
     from playwright.sync_api import sync_playwright
     try:
         with sync_playwright() as p:
@@ -19,11 +19,15 @@ def _get_html(url: str, wait_selector: str = "body", timeout: int = 25000) -> st
                 extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
             )
             page = ctx.new_page()
-            page.goto(url, timeout=timeout, wait_until="domcontentloaded")
-            try:
-                page.wait_for_selector(wait_selector, timeout=10000)
-            except Exception:
-                pass
+            page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            # Wait for JS to render content
+            if wait_selector:
+                try:
+                    page.wait_for_selector(wait_selector, timeout=15000)
+                except Exception:
+                    pass
+            # Extra buffer for JS rendering
+            page.wait_for_timeout(extra_wait_ms)
             html = page.content()
             browser.close()
             return html
@@ -32,8 +36,7 @@ def _get_html(url: str, wait_selector: str = "body", timeout: int = 25000) -> st
         return ""
 
 
-def _extract_jobs_from_links(html: str, source: str, company: str, base_url: str) -> list[Job]:
-    """Generic extractor — finds all <a> tags whose text matches title keywords."""
+def _extract_jobs_from_links(html: str, source: str, company: str, base_url: str) -> list:
     if not html:
         return []
     soup = BeautifulSoup(html, "html.parser")
@@ -51,7 +54,6 @@ def _extract_jobs_from_links(html: str, source: str, company: str, base_url: str
         if href in seen:
             continue
         seen.add(href)
-        # grab surrounding context as description
         parent = a.find_parent(["li", "article", "div", "tr"])
         desc = parent.get_text(separator=" ", strip=True)[:2000] if parent else title
         jobs.append(Job(
@@ -65,100 +67,98 @@ def _extract_jobs_from_links(html: str, source: str, company: str, base_url: str
     return jobs
 
 
-COMPANY_PAGES = [
-    ("weworkremotely", "WeWorkRemotely", "https://weworkremotely.com", [
-        "https://weworkremotely.com/categories/remote-data-science-jobs",
-        "https://weworkremotely.com/categories/remote-management-jobs",
-    ]),
-    ("remoteco", "Remote.co", "https://remote.co", [
-        "https://remote.co/remote-jobs/search/?search_keywords=head+of+data",
-        "https://remote.co/remote-jobs/search/?search_keywords=analytics+manager",
-    ]),
-    ("relocate", "Relocate.me", "https://relocate.me", [
-        "https://relocate.me/search?q=head+of+data",
-        "https://relocate.me/search?q=analytics+lead",
-    ]),
-    ("softserve", "SoftServe", "https://career.softserveinc.com", [
-        "https://career.softserveinc.com/en-us/vacancy?category=Data+%26+Analytics",
-    ]),
-    ("ciklum", "Ciklum", "https://www.ciklum.com", [
-        "https://www.ciklum.com/careers/open-positions",
-    ]),
-    ("epam", "EPAM Systems", "https://www.epam.com", [
+# ── Company scrapers with site-specific selectors ────────────────────────────
+
+def scrape_epam() -> list:
+    html = _get_html(
         "https://www.epam.com/careers/job-listings?sort=newest&department=Data+%26+Analytics",
-    ]),
-    ("globallogic", "GlobalLogic", "https://www.globallogic.com", [
+        wait_selector=".search-result__item, .job-card, [class*='vacancy']",
+    )
+    return _extract_jobs_from_links(html, "EPAM", "EPAM Systems", "https://www.epam.com")
+
+
+def scrape_globallogic() -> list:
+    html = _get_html(
         "https://www.globallogic.com/ua/careers/?search=data+analytics",
-    ]),
-    ("luxoft", "Luxoft", "https://career.luxoft.com", [
-        "https://career.luxoft.com/search-jobs/?keyword=data+analytics",
-    ]),
-    ("dataart", "DataArt", "https://www.dataart.com", [
+        wait_selector=".career-job, .job-item, [class*='career']",
+    )
+    return _extract_jobs_from_links(html, "GlobalLogic", "GlobalLogic", "https://www.globallogic.com")
+
+
+def scrape_luxoft() -> list:
+    html = _get_html(
+        "https://career.luxoft.com/search-jobs/?keyword=analyst",
+        wait_selector=".job-list, .job-card, [class*='job']",
+    )
+    return _extract_jobs_from_links(html, "Luxoft", "Luxoft", "https://career.luxoft.com")
+
+
+def scrape_softserve() -> list:
+    html = _get_html(
+        "https://career.softserveinc.com/en-us/vacancy?category=Data+%26+Analytics",
+        wait_selector=".vacancy-item, .job-card, [class*='vacancy']",
+    )
+    return _extract_jobs_from_links(html, "SoftServe", "SoftServe", "https://career.softserveinc.com")
+
+
+def scrape_ciklum() -> list:
+    html = _get_html(
+        "https://www.ciklum.com/careers/open-positions",
+        wait_selector=".job-card, .vacancy, [class*='position']",
+    )
+    return _extract_jobs_from_links(html, "Ciklum", "Ciklum", "https://www.ciklum.com")
+
+
+def scrape_dataart() -> list:
+    html = _get_html(
         "https://www.dataart.com/career",
-    ]),
-    ("sigma", "Sigma Software", "https://sigma.software", [
+        wait_selector=".vacancy, .job, [class*='career']",
+    )
+    return _extract_jobs_from_links(html, "DataArt", "DataArt", "https://www.dataart.com")
+
+
+def scrape_sigma() -> list:
+    html = _get_html(
         "https://sigma.software/about/career",
-    ]),
-    ("grammarly", "Grammarly", "https://www.grammarly.com", [
+        wait_selector=".vacancy, .job, [class*='career']",
+    )
+    return _extract_jobs_from_links(html, "Sigma", "Sigma Software", "https://sigma.software")
+
+
+def scrape_grammarly() -> list:
+    html = _get_html(
         "https://www.grammarly.com/jobs",
-    ]),
-    ("wix", "Wix", "https://www.wix.com", [
+        wait_selector="[class*='job'], [class*='position'], [class*='opening']",
+        extra_wait_ms=5000,
+    )
+    return _extract_jobs_from_links(html, "Grammarly", "Grammarly", "https://www.grammarly.com")
+
+
+def scrape_wix() -> list:
+    html = _get_html(
         "https://www.wix.com/jobs/locations/all-locations/departments/data",
-    ]),
-    ("playtika", "Playtika", "https://www.playtika.com", [
-        "https://www.playtika.com/careers/open-positions/",
-    ]),
-]
+        wait_selector="[class*='job'], [class*='position']",
+        extra_wait_ms=5000,
+    )
+    return _extract_jobs_from_links(html, "Wix", "Wix", "https://www.wix.com")
 
 
-def _scrape_company(key: str, company: str, base_url: str, urls: list[str]) -> list[Job]:
-    jobs = []
-    seen = set()
-    for url in urls:
-        html = _get_html(url)
-        new_jobs = _extract_jobs_from_links(html, key.capitalize(), company, base_url)
-        for j in new_jobs:
-            if j.url not in seen:
-                seen.add(j.url)
-                jobs.append(j)
-    return jobs
+def scrape_playtika() -> list:
+    # Handled via Greenhouse API in companies.py — this is a fallback
+    return []
 
 
-def scrape_weworkremotely() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[0])
+def scrape_weworkremotely() -> list:
+    # Handled via RSS in boards.py
+    from scrapers.boards import scrape_weworkremotely as _scrape
+    return _scrape()
 
-def scrape_remoteco() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[1])
 
-def scrape_relocate() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[2])
+def scrape_remoteco() -> list:
+    from scrapers.boards import scrape_remoteco as _scrape
+    return _scrape()
 
-def scrape_softserve() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[3])
 
-def scrape_ciklum() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[4])
-
-def scrape_epam() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[5])
-
-def scrape_globallogic() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[6])
-
-def scrape_luxoft() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[7])
-
-def scrape_dataart() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[8])
-
-def scrape_sigma() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[9])
-
-def scrape_grammarly() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[10])
-
-def scrape_wix() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[11])
-
-def scrape_playtika() -> list[Job]:
-    return _scrape_company(*COMPANY_PAGES[12])
+def scrape_relocate() -> list:
+    from scrapers.boards import scrape_relocate as _scrape
+    return _scrape()
