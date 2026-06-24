@@ -290,6 +290,36 @@ def scrape_superhuman() -> list[Job]:
     return _scrape_ashby("Superhuman Platform Inc", "Superhuman", "Superhuman")
 
 
+def scrape_headway() -> list[Job]:
+    jobs = []
+    try:
+        api_headers = {**HEADERS, "Referer": "https://careers.headway.inc/"}
+        resp = requests.get("https://careers.headway.inc/jobs.json", headers=api_headers, timeout=15)
+        resp.raise_for_status()
+        for j in resp.json().get("items", []):
+            title = j.get("title", "")
+            if not _title_match(title):
+                continue
+            jp = j.get("_jobposting", {})
+            loc = jp.get("jobLocation", {})
+            if isinstance(loc, dict):
+                addr = loc.get("address", {})
+                location = ", ".join(filter(None, [addr.get("addressLocality", ""), addr.get("addressCountry", "")]))
+            else:
+                location = ""
+            jobs.append(Job(
+                id=_make_id("headway", j.get("id", "")),
+                title=title,
+                company="Headway",
+                url=j.get("url", "https://careers.headway.inc/jobs"),
+                description=location,
+                source="Headway",
+            ))
+    except Exception as e:
+        print(f"[Headway] Error: {e}")
+    return jobs
+
+
 def scrape_evoplay() -> list[Job]:
     jobs = []
     try:

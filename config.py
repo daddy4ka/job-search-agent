@@ -45,6 +45,7 @@ SOURCES = [
     "grammarly",
     "superhuman",
     "evoplay",
+    "headway",
     # UA job boards
     "dou",
     "djinni",
