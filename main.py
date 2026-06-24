@@ -53,7 +53,6 @@ SCRAPERS = {
     # International remote boards
     "weworkremotely": scrape_weworkremotely,
     "remoteco": scrape_remoteco,
-    "relocate": scrape_relocate,
     "otta": scrape_otta,
 }
 
@@ -62,7 +61,7 @@ def run():
     print("=== Job Search Agent starting ===")
 
     all_jobs = []
-    source_counts: dict[str, int] = defaultdict(int)
+    source_counts = defaultdict(int)
 
     for source in SOURCES:
         scraper = SCRAPERS.get(source)
