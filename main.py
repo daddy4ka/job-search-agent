@@ -1,5 +1,5 @@
 """Main orchestrator — scrape → filter new → score → notify."""
-import sys
+from collections import defaultdict
 from config import MIN_SCORE, SOURCES
 from scrapers.dou import scrape as scrape_dou
 from scrapers.djinni import scrape as scrape_djinni
@@ -30,6 +30,8 @@ def run():
 
     # 1. Scrape all sources
     all_jobs = []
+    source_counts: dict[str, int] = defaultdict(int)
+
     for source in SOURCES:
         scraper = SCRAPERS.get(source)
         if not scraper:
@@ -39,18 +41,19 @@ def run():
             jobs = scraper()
             print(f"  → {len(jobs)} jobs found")
             all_jobs.extend(jobs)
+            for job in jobs:
+                source_counts[job.source] += 1
         except Exception as e:
             print(f"  → Error: {e}")
 
-    total_scraped = len(all_jobs)
-    print(f"\nTotal scraped: {total_scraped}")
+    print(f"\nTotal scraped: {sum(source_counts.values())}")
 
     # 2. Filter already-seen jobs
     new_jobs = filter_new(all_jobs)
     print(f"New (unseen): {len(new_jobs)}")
 
     if not new_jobs:
-        send_summary(total_scraped, 0, 0)
+        send_summary(dict(source_counts), 0, 0)
         return
 
     # 3. Score with Claude
@@ -66,7 +69,7 @@ def run():
             if success:
                 sent += 1
 
-    send_summary(total_scraped, len(new_jobs), sent)
+    send_summary(dict(source_counts), len(new_jobs), sent)
     print(f"\nDone. Sent {sent} notifications.")
 
 

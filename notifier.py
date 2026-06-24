@@ -8,27 +8,36 @@ def _get_chat_id() -> str:
     return os.environ.get("TELEGRAM_CHAT_ID", TELEGRAM_CHAT_ID)
 
 
-def send_job(job: Job, score: int, reason: str) -> bool:
-    score_bar = "🟢" * min(score, 5) + ("🟡" if score >= 5 else "🔴") * max(0, min(score - 5, 5))
-
-    text = (
-        f"💼 *{job.title}*\n"
-        f"🏢 {job.company} · {job.source}\n"
-        f"⭐ Score: {score}/10 {score_bar}\n"
-        f"💡 {reason}\n"
-        f"🔗 [Open Job]({job.url})"
-    )
-
+def _post(text: str) -> None:
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
+    requests.post(url, json={
         "chat_id": _get_chat_id(),
         "text": text,
         "parse_mode": "Markdown",
-        "disable_web_page_preview": False,
-    }
+        "disable_web_page_preview": True,
+    }, timeout=10)
 
+
+def send_job(job: Job, score: int, reason: str) -> bool:
+    filled = min(score, 10)
+    bar = "🟩" * filled + "⬜" * (10 - filled)
+
+    text = (
+        f"💼 *{job.title}*\n"
+        f"🏢 {job.company} · _{job.source}_\n"
+        f"⭐ {score}/10 {bar}\n"
+        f"💡 {reason}\n"
+        f"🔗 [Відкрити вакансію]({job.url})"
+    )
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     try:
-        resp = requests.post(url, json=payload, timeout=10)
+        resp = requests.post(url, json={
+            "chat_id": _get_chat_id(),
+            "text": text,
+            "parse_mode": "Markdown",
+            "disable_web_page_preview": False,
+        }, timeout=10)
         resp.raise_for_status()
         return True
     except Exception as e:
@@ -36,11 +45,31 @@ def send_job(job: Job, score: int, reason: str) -> bool:
         return False
 
 
-def send_summary(total_scraped: int, total_new: int, total_sent: int) -> None:
-    if total_sent == 0:
-        text = f"🔍 Job scan complete. {total_scraped} scraped, {total_new} new — no relevant matches this run."
-    else:
-        text = f"✅ Job scan done. {total_scraped} scraped · {total_new} new · {total_sent} sent to you."
+def send_summary(
+    source_counts: dict[str, int],
+    total_new: int,
+    total_sent: int,
+    top_scored: list[tuple[str, int]] | None = None,
+) -> None:
+    total_scraped = sum(source_counts.values())
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    requests.post(url, json={"chat_id": _get_chat_id(), "text": text}, timeout=10)
+    lines = ["📊 *Job scan complete*\n"]
+
+    # Per-source breakdown
+    source_icons = {
+        "DOU.ua": "🟡", "Djinni.co": "🟣", "EPAM": "🔵",
+        "GlobalLogic": "🟢", "Intellias": "🔷", "ELEKS": "🟠",
+        "Ciklum": "🔴", "N-iX": "⚪", "LinkedIn": "🔗",
+    }
+    for source, count in sorted(source_counts.items()):
+        icon = source_icons.get(source, "▪️")
+        lines.append(f"{icon} {source}: {count}")
+
+    lines.append(f"\n🔢 Всього: {total_scraped} | Нових: {total_new} | Надіслано: {total_sent}")
+
+    if total_sent == 0:
+        lines.append("\n😶 Релевантних вакансій не знайдено")
+    else:
+        lines.append(f"\n✅ {total_sent} вакансій надіслано вище")
+
+    _post("\n".join(lines))
