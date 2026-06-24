@@ -88,7 +88,7 @@ def run():
 
     sent = 0
     for job in new_jobs:
-        mark_seen(job, 0)
+        mark_seen(job)
         success = send_job(job)
         if success:
             sent += 1
