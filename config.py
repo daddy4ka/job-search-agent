@@ -33,7 +33,6 @@ SOURCES = [
     # UA outsourcers
     "intellias",
     "eleks",
-    "ciklum",
     "nix",
     "softserve",
     "luxoft",
