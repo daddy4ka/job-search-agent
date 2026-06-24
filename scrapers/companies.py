@@ -160,7 +160,35 @@ def scrape_playtika() -> list[Job]:
     return _scrape_greenhouse("playtikaltd", "Playtika", "Playtika")
 
 def scrape_wix() -> list[Job]:
-    return []  # no public API found
+    jobs = []
+    try:
+        url = "https://api.smartrecruiters.com/v1/companies/Wix2/postings?limit=200"
+        resp = requests.get(url, headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        seen = set()
+        for j in resp.json().get("content", []):
+            ref = j.get("refNumber") or j.get("id", "")
+            if ref in seen:
+                continue
+            seen.add(ref)
+            title = j.get("name", "")
+            if not _title_match(title):
+                continue
+            loc = j.get("location", {})
+            city = loc.get("city", "")
+            country = loc.get("country", "")
+            job_url = j.get("ref", "") or f"https://jobs.smartrecruiters.com/Wix2/{j.get('id','')}"
+            jobs.append(Job(
+                id=_make_id("wix", ref),
+                title=title,
+                company="Wix",
+                url=job_url,
+                description=f"{city}, {country}".strip(", "),
+                source="Wix",
+            ))
+    except Exception as e:
+        print(f"[Wix] Error: {e}")
+    return jobs
 
 def scrape_grammarly() -> list[Job]:
     return []  # no public API found
