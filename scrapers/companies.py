@@ -64,6 +64,55 @@ def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) 
     return jobs
 
 
+# ── Ashby public GraphQL API ──────────────────────────────────────────────────
+
+_ASHBY_QUERY = """query ApiJobBoardWithTeams($organizationHostedJobsPageName: String!) {
+  jobBoard: jobBoardWithTeams(organizationHostedJobsPageName: $organizationHostedJobsPageName) {
+    jobPostings {
+      id
+      title
+      locationName
+      workplaceType
+    }
+  }
+}"""
+
+def _scrape_ashby(org_name: str, company_name: str, source_label: str) -> list[Job]:
+    jobs = []
+    try:
+        api_headers = {**HEADERS, "Content-Type": "application/json", "Referer": "https://jobs.ashbyhq.com/"}
+        payload = {
+            "operationName": "ApiJobBoardWithTeams",
+            "variables": {"organizationHostedJobsPageName": org_name},
+            "query": _ASHBY_QUERY,
+        }
+        resp = requests.post(
+            "https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobBoardWithTeams",
+            headers=api_headers, json=payload, timeout=20,
+        )
+        resp.raise_for_status()
+        postings = resp.json().get("data", {}).get("jobBoard", {}).get("jobPostings", [])
+        slug = org_name.replace(" ", "%20")
+        for j in postings:
+            title = j.get("title", "")
+            if not _title_match(title):
+                continue
+            jid = j.get("id", "")
+            loc = j.get("locationName", "")
+            mode = j.get("workplaceType", "")
+            jobs.append(Job(
+                id=_make_id(source_label, jid),
+                title=title,
+                company=company_name,
+                url=f"https://jobs.ashbyhq.com/{slug}/{jid}",
+                description=f"{loc} | {mode}".strip(" |"),
+                source=source_label,
+            ))
+    except Exception as e:
+        print(f"[{source_label}] Ashby API error: {e}")
+    return jobs
+
+
 # ── UA Outsourcers ────────────────────────────────────────────────────────────
 
 def scrape_ciklum() -> list[Job]:
@@ -235,6 +284,10 @@ def scrape_wix() -> list[Job]:
 
 def scrape_grammarly() -> list[Job]:
     return []  # no public API found
+
+
+def scrape_superhuman() -> list[Job]:
+    return _scrape_ashby("Superhuman Platform Inc", "Superhuman", "Superhuman")
 
 
 def scrape_globallogic() -> list[Job]:

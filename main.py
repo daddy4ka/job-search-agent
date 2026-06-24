@@ -8,7 +8,7 @@ from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
     scrape_intellias, scrape_eleks, scrape_nix, scrape_epam, scrape_globallogic,
     scrape_playtika, scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart, scrape_wix,
-    scrape_ciklum, scrape_grammarly,
+    scrape_ciklum, scrape_grammarly, scrape_superhuman,
 )
 from scrapers.boards import scrape_weworkremotely, scrape_remoteco, scrape_relocate, scrape_otta
 from tracker import filter_new, mark_seen
@@ -31,6 +31,7 @@ SCRAPERS = {
     # UA outsourcers — Playwright
     "ciklum":         scrape_ciklum,
     "grammarly":      scrape_grammarly,
+    "superhuman":     scrape_superhuman,
     # UA job boards
     "dou":            scrape_dou,
     "djinni":         scrape_djinni,

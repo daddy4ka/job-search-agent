@@ -43,6 +43,7 @@ SOURCES = [
     "playtika",
     "wix",
     "grammarly",
+    "superhuman",
     # UA job boards
     "dou",
     "djinni",
