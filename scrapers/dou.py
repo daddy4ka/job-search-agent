@@ -30,6 +30,8 @@ TITLE_MUST_HAVE = [
     "data analyst", "bi analyst", "business intelligence analyst",
     "analytics analyst", "marketing analyst", "product analyst",
     "аналітик", "дата аналітик", "бі аналітик",
+    # Generic
+    "analyst",
 ]
 
 # Search-based feeds — each returns latest 25 matching jobs
