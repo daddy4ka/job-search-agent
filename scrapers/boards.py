@@ -16,35 +16,44 @@ def _make_id(source: str, url: str) -> str:
 # ── We Work Remotely ──────────────────────────────────────────────────────────
 
 def scrape_weworkremotely() -> list:
-    """Main RSS feed — 100 most recent remote jobs, filtered by title."""
+    """Category pages — data science + management, ~250 jobs each."""
     jobs = []
     seen = set()
+    PAGES = [
+        "https://weworkremotely.com/categories/remote-data-science-jobs",
+        "https://weworkremotely.com/categories/remote-management-finance-jobs",
+    ]
     try:
-        resp = requests.get(
-            "https://weworkremotely.com/remote-jobs.rss",
-            headers=HEADERS, timeout=20
-        )
-        feed = feedparser.parse(resp.text)
-        for entry in feed.entries:
-            title = entry.get("title", "")
-            if not _title_match(title):
-                continue
-            url = entry.get("link", "")
-            if url in seen:
-                continue
-            seen.add(url)
-            # title format: "Company: Job Title" — split it
-            parts = title.split(": ", 1)
-            company = parts[0].strip() if len(parts) > 1 else "WWR"
-            job_title = parts[1].strip() if len(parts) > 1 else title
-            jobs.append(Job(
-                id=_make_id("wwr", url),
-                title=job_title,
-                company=company,
-                url=url,
-                description=entry.get("summary", ""),
-                source="WeWorkRemotely",
-            ))
+        for url in PAGES:
+            resp = requests.get(url, headers=HEADERS, timeout=20)
+            soup = BeautifulSoup(resp.text, "html.parser")
+            for li in soup.select("section.jobs li.new-listing-container"):
+                title_el = li.select_one("span.new-listing__header__title__text")
+                link_el = li.select_one("a.listing-link--unlocked, a[class*=listing-link]")
+                if not title_el or not link_el:
+                    continue
+                title = title_el.get_text(strip=True)
+                if not _title_match(title):
+                    continue
+                href = link_el["href"]
+                if not href.startswith("http"):
+                    href = "https://weworkremotely.com" + href
+                if href in seen:
+                    continue
+                seen.add(href)
+                company_a = li.select_one("a[href*='/company/']")
+                company = (
+                    company_a["href"].split("/")[-1].replace("-", " ").title()
+                    if company_a else "WWR"
+                )
+                jobs.append(Job(
+                    id=_make_id("wwr", href),
+                    title=title,
+                    company=company,
+                    url=href,
+                    description="",
+                    source="WeWorkRemotely",
+                ))
     except Exception as e:
         print(f"[WWR] Error: {e}")
     print(f"  [WWR] {len(jobs)} matched")
