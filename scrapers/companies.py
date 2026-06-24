@@ -138,29 +138,39 @@ def scrape_sigma() -> list[Job]:
 def scrape_luxoft() -> list[Job]:
     jobs = []
     try:
-        url = "https://career.luxoft.com/search-jobs/?keyword=data+analytics&remote=true"
-        resp = requests.get(url, headers=HEADERS, timeout=15)
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(resp.text, "html.parser")
-        for item in soup.select(".job-item, .vacancy, article, li.job"):
-            title_el = item.select_one("h2, h3, h4, .title, a")
-            link_el = item.select_one("a[href]")
-            if not title_el:
+        base = "https://career.luxoft.com"
+        api_headers = {
+            **HEADERS,
+            "Referer": f"{base}/jobs",
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+        seen_keys = set()
+        for keyword in ["analyst", "analytics", "business intelligence", "data lead", "bi", "manager", "director"]:
+            resp = requests.get(f"{base}/ajax/filter-jobs", headers=api_headers, params={"keyword": keyword}, timeout=15)
+            if resp.status_code != 200 or not resp.text.strip():
                 continue
-            title = title_el.get_text(strip=True)
-            if not _title_match(title):
-                continue
-            href = link_el["href"] if link_el else ""
-            if href and not href.startswith("http"):
-                href = "https://career.luxoft.com" + href
-            jobs.append(Job(
-                id=_make_id("luxoft", href),
-                title=title,
-                company="Luxoft",
-                url=href,
-                description=item.get_text(separator=" ", strip=True)[:2000],
-                source="Luxoft",
-            ))
+            raw = resp.json()
+            vacancies = raw if isinstance(raw, list) else raw.get("data", [])
+            for v in vacancies:
+                title = v.get("title", "")
+                if not _title_match(title):
+                    continue
+                vr_key = v.get("vrPkey", "") or v.get("slug", "")
+                if vr_key in seen_keys:
+                    continue
+                seen_keys.add(vr_key)
+                slug = v.get("slug", "")
+                job_url = f"{base}/job/{slug}" if slug else base
+                location = f"{v.get('city', '')} | {v.get('country', '')}".strip(" |")
+                jobs.append(Job(
+                    id=_make_id("luxoft", vr_key),
+                    title=title,
+                    company="Luxoft",
+                    url=job_url,
+                    description=f"{v.get('specialization', '')} | {location}",
+                    source="Luxoft",
+                ))
     except Exception as e:
         print(f"[Luxoft] Error: {e}")
     return jobs
