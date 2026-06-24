@@ -342,6 +342,40 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
     return jobs
 
 
+def scrape_nixsolutions() -> list[Job]:
+    jobs = []
+    try:
+        from bs4 import BeautifulSoup
+        page_headers = {**HEADERS, "Accept": "text/html", "Accept-Language": "en,uk;q=0.9"}
+        resp = requests.get("https://www.nixsolutions.com/ua/cooperation/vacancies/", headers=page_headers, timeout=20)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        base = "https://www.nixsolutions.com"
+        seen = set()
+        for a in soup.select("a[href*='/vacancies/']"):
+            href = a.get("href", "")
+            if not href.startswith("http"):
+                href = base + href
+            slug = href.rstrip("/").split("/")[-1]
+            if not slug or slug == "vacancies" or href in seen:
+                continue
+            seen.add(href)
+            title = a.get_text(strip=True)
+            if not title or not _title_match(title):
+                continue
+            jobs.append(Job(
+                id=_make_id("nixsolutions", slug),
+                title=title,
+                company="NIX Solutions",
+                url=href,
+                description="Ukraine",
+                source="NIX Solutions",
+            ))
+    except Exception as e:
+        print(f"[NIX Solutions] Error: {e}")
+    return jobs
+
+
 def scrape_zone3000() -> list[Job]:
     jobs = []
     try:

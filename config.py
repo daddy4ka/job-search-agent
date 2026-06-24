@@ -50,6 +50,7 @@ SOURCES = [
     "ajax",
     "dxc",
     "zone3000",
+    "nixsolutions",
     "evoplay",
     "headway",
     # UA job boards
