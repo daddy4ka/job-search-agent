@@ -290,6 +290,31 @@ def scrape_superhuman() -> list[Job]:
     return _scrape_ashby("Superhuman Platform Inc", "Superhuman", "Superhuman")
 
 
+def scrape_evoplay() -> list[Job]:
+    jobs = []
+    try:
+        api_headers = {**HEADERS, "Referer": "https://evoplay.com.ua/"}
+        resp = requests.get("https://app.catsone.com/portal?id=42364", headers=api_headers, timeout=15)
+        resp.raise_for_status()
+        for j in resp.json().get("jobs", []):
+            title = j.get("title", "")
+            if not _title_match(title):
+                continue
+            loc = j.get("location", {})
+            city = loc.get("city", "") or loc.get("state", "")
+            jobs.append(Job(
+                id=_make_id("evoplay", str(j.get("id", ""))),
+                title=title,
+                company="Evoplay",
+                url=j.get("url", "https://evoplay.com.ua/uk/career/"),
+                description=city,
+                source="Evoplay",
+            ))
+    except Exception as e:
+        print(f"[Evoplay] Error: {e}")
+    return jobs
+
+
 def scrape_globallogic() -> list[Job]:
     import re as _re
     import time as _time

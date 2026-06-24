@@ -44,6 +44,7 @@ SOURCES = [
     "wix",
     "grammarly",
     "superhuman",
+    "evoplay",
     # UA job boards
     "dou",
     "djinni",
