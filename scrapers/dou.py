@@ -32,6 +32,9 @@ TITLE_MUST_HAVE = [
     "аналітик", "дата аналітик", "бі аналітик",
     # Generic
     "analyst",
+    # R&D / Strategy
+    "r&d team lead", "r&d lead", "research and development lead",
+    "marketing strategy manager", "marketing manager", "strategy manager",
 ]
 
 # Search-based feeds — each returns latest 25 matching jobs
