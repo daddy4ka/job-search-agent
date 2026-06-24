@@ -16,15 +16,20 @@ def _make_id(source: str, url: str) -> str:
 # ── We Work Remotely ──────────────────────────────────────────────────────────
 
 def scrape_weworkremotely() -> list:
-    """Category pages — data science + management, ~250 jobs each."""
+    """Category pages + keyword search on WeWorkRemotely."""
     jobs = []
     seen = set()
-    PAGES = [
-        "https://weworkremotely.com/categories/remote-data-science-jobs",
-        "https://weworkremotely.com/categories/remote-management-finance-jobs",
+    base = "https://weworkremotely.com"
+    URLS = [
+        f"{base}/categories/remote-management-and-finance-jobs",
+        f"{base}/categories/remote-product-jobs",
+        f"{base}/remote-jobs/search?term=data+analyst",
+        f"{base}/remote-jobs/search?term=business+analyst",
+        f"{base}/remote-jobs/search?term=head+of+data",
+        f"{base}/remote-jobs/search?term=analytics+lead",
     ]
     try:
-        for url in PAGES:
+        for url in URLS:
             resp = requests.get(url, headers=HEADERS, timeout=20)
             soup = BeautifulSoup(resp.text, "html.parser")
             for li in soup.select("section.jobs li.new-listing-container"):
@@ -37,10 +42,14 @@ def scrape_weworkremotely() -> list:
                     continue
                 href = link_el["href"]
                 if not href.startswith("http"):
-                    href = "https://weworkremotely.com" + href
+                    href = base + href
                 if href in seen:
                     continue
                 seen.add(href)
+                dedup_key = (title.lower(), href.split("/")[-1][:30])
+                if dedup_key in seen:
+                    continue
+                seen.add(dedup_key)
                 company_a = li.select_one("a[href*='/company/']")
                 company = (
                     company_a["href"].split("/")[-1].replace("-", " ").title()
