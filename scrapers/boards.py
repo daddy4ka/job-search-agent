@@ -1,21 +1,23 @@
 """Scrapers for remote job boards: We Work Remotely, Remote.co, Otta, Relocate.me"""
+import hashlib
 import feedparser
 import requests
 from bs4 import BeautifulSoup
 from scrapers.dou import Job, _title_match
+from proxy import get_session
 
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; JobSearchBot/1.0)"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"}
 
 
 def _make_id(source: str, url: str) -> str:
-    import hashlib
     return f"{source}_{hashlib.md5(url.encode()).hexdigest()[:12]}"
 
 
-# ── We Work Remotely (RSS) ────────────────────────────────────────────────────
+# ── We Work Remotely ──────────────────────────────────────────────────────────
 
 def scrape_weworkremotely() -> list[Job]:
     jobs = []
+    session = get_session()
     feeds = [
         "https://weworkremotely.com/categories/remote-data-science-jobs.rss",
         "https://weworkremotely.com/categories/remote-management-jobs.rss",
@@ -24,7 +26,8 @@ def scrape_weworkremotely() -> list[Job]:
     seen = set()
     for feed_url in feeds:
         try:
-            feed = feedparser.parse(feed_url)
+            resp = session.get(feed_url, timeout=20)
+            feed = feedparser.parse(resp.text)
             for entry in feed.entries:
                 title = entry.get("title", "")
                 if not _title_match(title):
@@ -46,20 +49,22 @@ def scrape_weworkremotely() -> list[Job]:
     return jobs
 
 
-# ── Remote.co (scraping) ─────────────────────────────────────────────────────
+# ── Remote.co ─────────────────────────────────────────────────────────────────
 
 def scrape_remoteco() -> list[Job]:
     jobs = []
+    session = get_session()
     searches = [
         "https://remote.co/remote-jobs/search/?search_keywords=data+analytics",
         "https://remote.co/remote-jobs/search/?search_keywords=business+intelligence",
+        "https://remote.co/remote-jobs/search/?search_keywords=head+of+data",
     ]
     seen = set()
     for url in searches:
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=15)
+            resp = session.get(url, timeout=20)
             soup = BeautifulSoup(resp.text, "html.parser")
-            for item in soup.select(".job_listings li, .job-listing, article"):
+            for item in soup.select(".job_listings li, .job-listing, article, .listing"):
                 title_el = item.select_one("h3, h4, .position, a")
                 link_el = item.select_one("a[href]")
                 company_el = item.select_one(".company, .employer")
@@ -87,28 +92,15 @@ def scrape_remoteco() -> list[Job]:
     return jobs
 
 
-# ── Otta (public API) ─────────────────────────────────────────────────────────
+# ── Otta ──────────────────────────────────────────────────────────────────────
 
 def scrape_otta() -> list[Job]:
     jobs = []
+    session = get_session()
     try:
         url = "https://api.otta.com/graphql"
-        query = """
-        {
-          jobs(filters: {query: "data analytics head lead director"}) {
-            edges {
-              node {
-                id
-                title
-                externalUrl
-                company { name }
-                jobDescription
-              }
-            }
-          }
-        }
-        """
-        resp = requests.post(url, json={"query": query}, headers=HEADERS, timeout=15)
+        query = '{ jobs(filters: {query: "data analytics head lead director"}) { edges { node { id title externalUrl company { name } jobDescription } } } }'
+        resp = session.post(url, json={"query": query}, timeout=20)
         data = resp.json()
         for edge in data.get("data", {}).get("jobs", {}).get("edges", []):
             node = edge.get("node", {})
@@ -129,39 +121,41 @@ def scrape_otta() -> list[Job]:
     return jobs
 
 
-# ── Relocate.me (RSS/scraping) ────────────────────────────────────────────────
+# ── Relocate.me ───────────────────────────────────────────────────────────────
 
 def scrape_relocate() -> list[Job]:
     jobs = []
-    searches = [
-        "https://relocate.me/search#q=data+analytics&remote=true",
-        "https://relocate.me/search#q=business+intelligence",
-        "https://relocate.me/search#q=head+of+data",
-    ]
+    session = get_session()
+    queries = ["head of data", "data analytics", "business intelligence lead"]
     seen = set()
-    for url in searches:
+    for q in queries:
         try:
-            # Relocate.me loads via JS, try their search API directly
-            api_url = url.replace("https://relocate.me/search#", "https://relocate.me/api/jobs?")
-            resp = requests.get(api_url, headers=HEADERS, timeout=15)
-            data = resp.json() if resp.ok else {}
-            items = data.get("jobs", data.get("results", data.get("data", [])))
-            for item in items:
-                title = item.get("title", item.get("position", ""))
+            url = f"https://relocate.me/search?q={q.replace(' ', '+')}"
+            resp = session.get(url, timeout=20)
+            soup = BeautifulSoup(resp.text, "html.parser")
+            for item in soup.select(".job-card, .vacancy, article, [class*='job']"):
+                title_el = item.select_one("h2, h3, h4, .title, a")
+                link_el = item.select_one("a[href]")
+                if not title_el:
+                    continue
+                title = title_el.get_text(strip=True)
                 if not _title_match(title):
                     continue
-                job_url = item.get("url", item.get("link", ""))
-                if job_url in seen:
+                href = link_el["href"] if link_el else ""
+                if not href.startswith("http"):
+                    href = "https://relocate.me" + href
+                if href in seen:
                     continue
-                seen.add(job_url)
+                seen.add(href)
                 jobs.append(Job(
-                    id=_make_id("relocate", job_url),
+                    id=_make_id("relocate", href),
                     title=title,
-                    company=item.get("company", {}).get("name", "") if isinstance(item.get("company"), dict) else item.get("company", "Relocate.me"),
-                    url=job_url,
-                    description=item.get("description", "")[:2000],
+                    company=item.select_one(".company, .employer, [class*='company']") and
+                            item.select_one(".company, .employer, [class*='company']").get_text(strip=True) or "Relocate.me",
+                    url=href,
+                    description=item.get_text(separator=" ", strip=True)[:2000],
                     source="Relocate.me",
                 ))
         except Exception as e:
-            print(f"[Relocate.me] Error for {url}: {e}")
+            print(f"[Relocate.me] Error: {e}")
     return jobs
