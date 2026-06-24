@@ -117,7 +117,44 @@ def scrape_softserve() -> list[Job]:
     return jobs
 
 def scrape_dataart() -> list[Job]:
-    return []  # no public API found
+    jobs = []
+    try:
+        base = "https://www.dataart.team"
+        api_headers = {**HEADERS, "Referer": f"{base}/vacancies", "Accept": "application/json"}
+        # Data & Analytics (4667), Business Analysis (4665), Management (964)
+        CATEGORY_IDS = [4667, 4665, 964]
+        seen = set()
+        for cat_id in CATEGORY_IDS:
+            for pg in range(1, 20):
+                url = f"{base}/dataart-team/api/vacancies/filter-fields-page?page={pg}&pageSize=0&categories={cat_id}"
+                resp = requests.get(url, headers=api_headers, timeout=15)
+                resp.raise_for_status()
+                data = resp.json()
+                vacs = data.get("vacancies", {})
+                items = vacs.get("items", []) if isinstance(vacs, dict) else []
+                pages_total = vacs.get("pagesTotal", 1)
+                for v in items:
+                    vid = v.get("id")
+                    if vid in seen:
+                        continue
+                    seen.add(vid)
+                    title = v.get("title", "")
+                    if not _title_match(title):
+                        continue
+                    job_url = v.get("fullUrl", base)
+                    jobs.append(Job(
+                        id=_make_id("dataart", str(vid)),
+                        title=title,
+                        company="DataArt",
+                        url=job_url,
+                        description=v.get("text", "")[:500],
+                        source="DataArt",
+                    ))
+                if pg >= pages_total or not items:
+                    break
+    except Exception as e:
+        print(f"[DataArt] Error: {e}")
+    return jobs
 
 def scrape_playtika() -> list[Job]:
     return _scrape_greenhouse("playtikaltd", "Playtika", "Playtika")
