@@ -1,11 +1,12 @@
 import feedparser
-from scrapers.dou import Job
+from scrapers.dou import Job, _title_match
 
 
 DJINNI_FEEDS = [
     "https://djinni.co/jobs/rss/?primary_keyword=Data+Science",
     "https://djinni.co/jobs/rss/?primary_keyword=Data+Analytics",
     "https://djinni.co/jobs/rss/?primary_keyword=Business+Intelligence",
+    "https://djinni.co/jobs/rss/?primary_keyword=Product+Management",
 ]
 
 
@@ -22,9 +23,13 @@ def scrape() -> list[Job]:
                     continue
                 seen_ids.add(job_id)
 
+                title = entry.get("title", "")
+                if not _title_match(title):
+                    continue
+
                 jobs.append(Job(
                     id=f"djinni_{job_id}",
-                    title=entry.get("title", ""),
+                    title=title,
                     company=entry.get("author", "Djinni"),
                     url=entry.get("link", ""),
                     description=entry.get("summary", ""),
