@@ -7,12 +7,12 @@ from scrapers.djinni import scrape as scrape_djinni
 from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
     scrape_intellias, scrape_eleks, scrape_nix, scrape_lohika,
-    scrape_playtika, scrape_softserve, scrape_luxoft,
+    scrape_playtika, scrape_softserve, scrape_luxoft, scrape_sigma,
 )
 from scrapers.boards import scrape_weworkremotely, scrape_remoteco, scrape_relocate, scrape_otta
 from scrapers.playwright_scraper import (
     scrape_ciklum, scrape_dataart,
-    scrape_sigma, scrape_grammarly, scrape_wix,
+    scrape_grammarly, scrape_wix,
 )
 from tracker import filter_new, mark_seen
 from notifier import send_job, send_summary

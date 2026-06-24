@@ -132,7 +132,52 @@ def scrape_lohika() -> list[Job]:
     return []  # no public API found
 
 def scrape_sigma() -> list[Job]:
-    return []  # no public API found
+    jobs = []
+    try:
+        from bs4 import BeautifulSoup
+        base = "https://career.sigma.software"
+        ajax_url = f"{base}/wp-admin/admin-ajax.php"
+        headers = {
+            **HEADERS,
+            "Referer": f"{base}/what-we-offer/vacancies/",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        seen = set()
+
+        def _parse_page(html: str):
+            soup = BeautifulSoup(html, "html.parser")
+            for a in soup.find_all("a", class_="vacancy-card-new"):
+                href = a.get("href", "")
+                if href in seen:
+                    continue
+                seen.add(href)
+                title_el = a.select_one("h3")
+                title = title_el.get_text(strip=True)[:120] if title_el else ""
+                if not _title_match(title):
+                    continue
+                jobs.append(Job(
+                    id=_make_id("sigma", href),
+                    title=title,
+                    company="Sigma Software",
+                    url=href,
+                    description=a.get_text(separator=" ", strip=True)[:500],
+                    source="Sigma",
+                ))
+
+        r0 = requests.post(ajax_url, headers=headers, timeout=15,
+            data="action=filter_vacancies_v2&keyword=&direction=%5B%5D&direction_type=children&locations=%5B%5D&seniority=%5B%5D&workplace_type=%5B%5D")
+        _parse_page(r0.json().get("data", {}).get("html", ""))
+
+        for page in range(1, 20):
+            r = requests.post(ajax_url, headers=headers, timeout=15,
+                data=f"action=filter_vacancies_v2_loadmore&page={page}&direction=%5B%5D&direction_type=children&locations=%5B%5D&seniority=%5B%5D&workplace_type=%5B%5D&keyword=")
+            html = r.json().get("data", {}).get("html", "") if r.json() else ""
+            if not html:
+                break
+            _parse_page(html)
+    except Exception as e:
+        print(f"[Sigma] Error: {e}")
+    return jobs
 
 
 def scrape_luxoft() -> list[Job]:
