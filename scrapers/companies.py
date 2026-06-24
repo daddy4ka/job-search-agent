@@ -342,6 +342,43 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
     return jobs
 
 
+def scrape_tieto() -> list[Job]:
+    jobs = []
+    try:
+        from bs4 import BeautifulSoup
+        page_headers = {**HEADERS, "Accept": "text/html"}
+        base = "https://careers.tieto.com"
+        seen = set()
+        for page_num in range(1, 60):
+            resp = requests.get(f"{base}/jobs?q=&options=&page={page_num}", headers=page_headers, timeout=20)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "html.parser")
+            links = {
+                a.get("href"): a.get_text(strip=True)
+                for a in soup.select("a[href^='/job/']")
+                if a.get_text(strip=True) and "Apply" not in a.get_text(strip=True)
+            }
+            new_hrefs = [h for h in links if h not in seen]
+            if not new_hrefs:
+                break
+            for href in new_hrefs:
+                seen.add(href)
+                title = links[href]
+                if not _title_match(title):
+                    continue
+                jobs.append(Job(
+                    id=_make_id("tieto", href),
+                    title=title,
+                    company="TietoEVRY",
+                    url=base + href,
+                    description="",
+                    source="TietoEVRY",
+                ))
+    except Exception as e:
+        print(f"[TietoEVRY] Error: {e}")
+    return jobs
+
+
 def scrape_nixsolutions() -> list[Job]:
     jobs = []
     try:
