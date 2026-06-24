@@ -49,6 +49,7 @@ SOURCES = [
     "gr8tech",
     "ajax",
     "dxc",
+    "zone3000",
     "evoplay",
     "headway",
     # UA job boards

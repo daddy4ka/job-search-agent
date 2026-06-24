@@ -342,6 +342,33 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
     return jobs
 
 
+def scrape_zone3000() -> list[Job]:
+    jobs = []
+    try:
+        api_headers = {**HEADERS, "Referer": "https://zone3000.net/", "Accept": "application/json"}
+        resp = requests.get("https://zone3000.net/api/vacancies", headers=api_headers, timeout=15)
+        resp.raise_for_status()
+        for j in resp.json():
+            title = j.get("title", "")
+            if not _title_match(title):
+                continue
+            slug = j.get("url", "")
+            loc = j.get("location", [])
+            remote = j.get("remote", 0)
+            desc = "Remote" if remote else ""
+            jobs.append(Job(
+                id=_make_id("zone3000", str(j.get("id", slug))),
+                title=title,
+                company="Zone3000",
+                url=f"https://zone3000.net/vacancies/{slug}" if slug else "https://zone3000.net/vacancies",
+                description=desc,
+                source="Zone3000",
+            ))
+    except Exception as e:
+        print(f"[Zone3000] Error: {e}")
+    return jobs
+
+
 def scrape_dxc() -> list[Job]:
     return _scrape_workday(
         tenant="dxctechnology", site="dxcjobs", company_name="DXC Technology", source_label="DXC",
