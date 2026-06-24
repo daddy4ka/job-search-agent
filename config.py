@@ -31,7 +31,6 @@ ANTHROPIC_API_KEY = ""  # Set via GitHub Actions secret ANTHROPIC_API_KEY
 
 SOURCES = [
     # UA outsourcers
-    "epam",
     "globallogic",
     "intellias",
     "eleks",
