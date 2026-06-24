@@ -62,9 +62,6 @@ SOURCES = [
     "dou",
     "djinni",
     "telegram",
-    "relocate",
     # International remote boards
     "weworkremotely",
-    "remoteco",
-    "otta",
 ]

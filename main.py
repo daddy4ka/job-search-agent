@@ -13,7 +13,7 @@ from scrapers.companies import (
     scrape_temabit,
     scrape_evoplay, scrape_headway,
 )
-from scrapers.boards import scrape_weworkremotely, scrape_remoteco, scrape_relocate, scrape_otta
+from scrapers.boards import scrape_weworkremotely
 from tracker import filter_new, mark_seen
 from notifier import send_job, send_summary
 
@@ -53,9 +53,6 @@ SCRAPERS = {
     "telegram":       scrape_telegram,
     # International
     "weworkremotely": scrape_weworkremotely,
-    "remoteco":       scrape_remoteco,
-    "relocate":       scrape_relocate,
-    "otta":           scrape_otta,
 }
 
 
