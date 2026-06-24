@@ -79,7 +79,42 @@ def scrape_eleks() -> list[Job]:
     return _scrape_lever("eleks", "ELEKS", "ELEKS")
 
 def scrape_softserve() -> list[Job]:
-    return []  # no public API found
+    jobs = []
+    try:
+        base = "https://career.softserveinc.com"
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": f"{base}/en-us/vacancies",
+            "Accept": "application/json",
+        }
+        page = 1
+        while True:
+            url = f"{base}/api/frontend/vacancies?query=%2A%3F&page={page}"
+            resp = requests.get(url, headers=headers, timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
+            vacancies = data.get("data", {}).get("vacancies", [])
+            for v in vacancies:
+                title = v.get("name", "")
+                if not _title_match(title):
+                    continue
+                slug = v.get("urlSegment", "")
+                job_url = f"{base}/en-us/vacancies/{slug}" if slug else base
+                jobs.append(Job(
+                    id=_make_id("softserve", job_url),
+                    title=title,
+                    company="SoftServe",
+                    url=job_url,
+                    description=f"{v.get('direction','')} | {v.get('city','')}",
+                    source="SoftServe",
+                ))
+            meta = data.get("meta", {})
+            if page >= meta.get("last_page", 1):
+                break
+            page += 1
+    except Exception as e:
+        print(f"[SoftServe] API error: {e}")
+    return jobs
 
 def scrape_dataart() -> list[Job]:
     return []  # no public API found
