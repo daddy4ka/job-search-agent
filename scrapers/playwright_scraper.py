@@ -74,7 +74,9 @@ def scrape_epam() -> list:
         "https://www.epam.com/careers/job-listings?sort=newest&department=Data+%26+Analytics",
         wait_selector=".search-result__item, .job-card, [class*='vacancy']",
     )
-    return _extract_jobs_from_links(html, "EPAM", "EPAM Systems", "https://www.epam.com")
+    # Filter only real vacancy URLs (contain /vacancy/), skip category pages (/jobs/)
+    all_jobs = _extract_jobs_from_links(html, "EPAM", "EPAM Systems", "https://www.epam.com")
+    return [j for j in all_jobs if "/vacancy/" in j.url]
 
 
 def scrape_globallogic() -> list:
