@@ -67,7 +67,50 @@ def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) 
 # ── UA Outsourcers ────────────────────────────────────────────────────────────
 
 def scrape_ciklum() -> list[Job]:
-    return []  # no public API found
+    jobs = []
+    seen = set()
+    try:
+        api = "https://ialmme.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions"
+        job_base = "https://explore-jobs.ciklum.com/en/sites/ciklum-career/job"
+        api_headers = {**HEADERS, "Referer": "https://explore-jobs.ciklum.com/", "Accept": "application/json"}
+        offset = 0
+        total = 9999
+        while offset < total:
+            params = {
+                "onlyData": "true",
+                "expand": "requisitionList.workLocation",
+                "finder": f"findReqs;siteNumber=CX_1001,facetsList=LOCATIONS;TITLES;CATEGORIES,limit=25,sortBy=POSTING_DATES_DESC,offset={offset}",
+            }
+            resp = requests.get(api, headers=api_headers, params=params, timeout=20)
+            if resp.status_code != 200 or not resp.text.strip():
+                break
+            item = resp.json()["items"][0]
+            reqs = item.get("requisitionList", [])
+            total = item.get("TotalJobsCount", 0)
+            if not reqs:
+                break
+            for j in reqs:
+                jid = str(j.get("Id", ""))
+                if not jid or jid in seen:
+                    continue
+                seen.add(jid)
+                title = j.get("Title", "")
+                if not _title_match(title):
+                    continue
+                country = j.get("PrimaryLocationCountry", "")
+                mode = j.get("WorkplaceTypeCode", "").replace("ORA_", "").title()
+                jobs.append(Job(
+                    id=_make_id("ciklum", jid),
+                    title=title,
+                    company="Ciklum",
+                    url=f"{job_base}/{jid}",
+                    description=f"{country} | {mode}".strip(" |"),
+                    source="Ciklum",
+                ))
+            offset += 25
+    except Exception as e:
+        print(f"[Ciklum] Error: {e}")
+    return jobs
 
 def scrape_intellias() -> list[Job]:
     return _scrape_lever("intellias", "Intellias", "Intellias")

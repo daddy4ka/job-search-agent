@@ -70,11 +70,38 @@ def _extract_jobs_from_links(html: str, source: str, company: str, base_url: str
 # ── Company scrapers with site-specific selectors ────────────────────────────
 
 def scrape_epam() -> list:
-    html = _get_html(
-        "https://www.epam.com/careers/job-listings?sort=newest&department=Data+%26+Analytics",
-        wait_selector=".search-result__item, .job-card, [class*='vacancy']",
-    )
-    # Filter only real vacancy URLs (contain /vacancy/), skip category pages (/jobs/)
+    import os
+    from playwright.sync_api import sync_playwright
+
+    proxy = {
+        "server": "brd.superproxy.io:33335",
+        "username": "brd-customer-hl_8b3a9889-zone-job_search",
+        "password": os.environ.get("BRIGHTDATA_PASSWORD", ""),
+    }
+
+    html = ""
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True, args=["--ignore-certificate-errors"])
+            ctx = browser.new_context(
+                proxy=proxy,
+                ignore_https_errors=True,
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+            )
+            page = ctx.new_page()
+            page.goto(
+                "https://www.epam.com/careers/job-listings?sort=newest&department=Data+%26+Analytics",
+                timeout=40000, wait_until="domcontentloaded"
+            )
+            # Scroll down to load more jobs
+            for _ in range(5):
+                page.evaluate("window.scrollBy(0, 1500)")
+                page.wait_for_timeout(1500)
+            html = page.content()
+            browser.close()
+    except Exception as e:
+        print(f"[EPAM] Playwright error: {e}")
+
     all_jobs = _extract_jobs_from_links(html, "EPAM", "EPAM Systems", "https://www.epam.com")
     return [j for j in all_jobs if "/vacancy/" in j.url]
 
