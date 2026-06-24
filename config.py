@@ -53,6 +53,7 @@ SOURCES = [
     "nixsolutions",
     "tieto",
     "fractal",
+    "novadigital",
     "evoplay",
     "headway",
     # UA job boards

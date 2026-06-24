@@ -343,6 +343,32 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
     return jobs
 
 
+def scrape_novadigital() -> list[Job]:
+    jobs = []
+    try:
+        api_headers = {**HEADERS, "Accept": "application/json", "Referer": "https://novadigital.com/"}
+        resp = requests.get(
+            "https://jobs.dou.ua/companies/nova-digital/vacancies/export/?lang=en",
+            headers=api_headers, timeout=15,
+        )
+        resp.raise_for_status()
+        for j in resp.json():
+            title = j.get("title", "")
+            if not _title_match(title):
+                continue
+            jobs.append(Job(
+                id=_make_id("novadigital", j.get("link", title)),
+                title=title,
+                company="Nova Digital",
+                url=j.get("link", "https://novadigital.com/careers"),
+                description=j.get("location", ""),
+                source="Nova Digital",
+            ))
+    except Exception as e:
+        print(f"[Nova Digital] Error: {e}")
+    return jobs
+
+
 def scrape_fractal() -> list[Job]:
     jobs = []
     try:
