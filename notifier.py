@@ -1,5 +1,4 @@
 import os
-import time
 import requests
 from datetime import datetime, timezone
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
@@ -27,14 +26,13 @@ def _post_html(text: str) -> bool:
 
 
 def send_job(job: Job) -> bool:
-    source_safe = job.source.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    title_safe = job.title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    company_safe = job.company.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    def esc(s):
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
     text = (
-        f"💼 <b>{title_safe}</b>\n"
-        f"🏢 {company_safe} · <i>{source_safe}</i>\n"
-        f"🔗 <a href=\"{job.url}\">Відкрити вакансію</a>"
+        f"💼 <b>{esc(job.title)}</b>\n"
+        f"🏢 {esc(job.company)} · <i>{esc(job.source)}</i>\n"
+        f'🔗 <a href="{job.url}">Відкрити вакансію</a>'
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -52,7 +50,10 @@ def send_job(job: Job) -> bool:
         return False
 
 
-def send_summary(source_counts, total_new, total_sent, started_at) -> None:
+def send_summary(source_counts, new_counts, total_new, total_sent, started_at) -> None:
+    def esc(s):
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
     total_scraped = sum(source_counts.values())
     finished_at = datetime.now(timezone.utc)
     duration_sec = int((finished_at - started_at).total_seconds())
@@ -60,23 +61,28 @@ def send_summary(source_counts, total_new, total_sent, started_at) -> None:
     finished_str = finished_at.strftime("%d.%m.%Y %H:%M UTC")
 
     lines = [
-        f"📊 <b>Job scan complete</b>",
+        "📊 <b>Job scan complete</b>",
         f"🕐 {finished_str} · тривалість {duration_str}",
         "",
     ]
 
     source_icons = {
-        "DOU.ua": "🟡", "Djinni.co": "🟣",
-        "EPAM Systems": "🔵", "GlobalLogic": "🟢",
-        "Intellias": "🔷", "ELEKS": "🟠",
-        "Ciklum": "🔴", "N-iX": "⚪",
-        "Relocate.me": "✈️", "WeWorkRemotely": "🌍", "Remote.co": "🌐",
+        "dou": "🟡", "djinni": "🟣",
+        "epam": "🔵", "globallogic": "🟢",
+        "intellias": "🔷", "eleks": "🟠",
+        "ciklum": "🔴", "n-ix": "⚪", "nix": "⚪",
+        "relocate": "✈️", "weworkremotely": "🌍", "remote.co": "🌐",
+        "telegram": "📢", "softserve": "🟩", "luxoft": "🔸",
+        "dataart": "🎨", "sigma": "Σ", "grammarly": "✏️",
+        "wix": "🌀", "playtika": "🎮",
     }
 
     for source, count in sorted(source_counts.items()):
-        icon = next((v for k, v in source_icons.items() if k.lower() in source.lower()), "▪️")
-        source_safe = source.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        lines.append(f"{icon} {source_safe}: {count}")
+        key = source.lower()
+        icon = next((v for k, v in source_icons.items() if k in key), "▪️")
+        new_c = new_counts.get(source, 0)
+        new_str = f" <b>(+{new_c} нових)</b>" if new_c > 0 else ""
+        lines.append(f"{icon} {esc(source)}: {count}{new_str}")
 
     lines.append("")
     lines.append(f"🔢 Знайдено: {total_scraped} | Нових: {total_new} | Надіслано: {total_sent}")
