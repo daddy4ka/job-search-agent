@@ -10,8 +10,11 @@ from scrapers.companies import (
     scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart,
     scrape_lohika, scrape_playtika, scrape_wix, scrape_grammarly,
 )
-from scrapers.boards import (
-    scrape_weworkremotely, scrape_remoteco, scrape_otta, scrape_relocate,
+from scrapers.boards import scrape_otta
+from scrapers.playwright_scraper import (
+    scrape_weworkremotely, scrape_remoteco, scrape_relocate,
+    scrape_softserve as scrape_softserve_pw,
+    scrape_ciklum as scrape_ciklum_pw,
 )
 from tracker import filter_new, mark_seen
 from matcher import score_jobs
@@ -24,9 +27,9 @@ SCRAPERS = {
     "globallogic": scrape_globallogic,
     "intellias": scrape_intellias,
     "eleks": scrape_eleks,
-    "ciklum": scrape_ciklum,
+    "ciklum": scrape_ciklum_pw,
     "nix": scrape_nix,
-    "softserve": scrape_softserve,
+    "softserve": scrape_softserve_pw,
     "luxoft": scrape_luxoft,
     "sigma": scrape_sigma,
     "dataart": scrape_dataart,
@@ -42,6 +45,7 @@ SCRAPERS = {
     # International remote boards
     "weworkremotely": scrape_weworkremotely,
     "remoteco": scrape_remoteco,
+    "relocate": scrape_relocate,
     "otta": scrape_otta,
 }
 
