@@ -9,11 +9,23 @@ HEADERS = {
     "Accept-Language": "uk,en;q=0.9",
 }
 
+# Signals that a post is an actual job listing, not a discussion/article
+JOB_SIGNALS = [
+    "вакансія", "вакансії", "vacancy", "hiring", "we're hiring", "we are hiring",
+    "шукаємо", "запрошуємо", "відкрита позиція", "open position", "job opening",
+    "apply", "подати заявку", "надсилайте", "резюме на", "cv to",
+    "#vacancy", "#вакансія", "#hiring", "#job", "#jobs", "#робота",
+    "обов'язки", "обов`язки", "обовязки", "responsibilities",
+    "досвід від", "досвід роботи", "years of experience",
+    "$/міс", "$/month", "грн/міс", "usd/month", "зарплата від",
+    "salary:", "компенсація:",
+]
+
 CHANNELS = [
-    "dna325",       # NON-tech Jobs in IT & defense
-    "workado_jobs", # Workado | Вакансії та карʼєра
-    "Space_Job",    # SPACE JOB | IT
-    "ymlnvjobs",    # Вакансії Ємельянова | IT / DIGITAL
+    "dna325",
+    "workado_jobs",
+    "Space_Job",
+    "ymlnvjobs",
 ]
 
 
@@ -21,7 +33,12 @@ def _make_id(channel: str, msg_id: str) -> str:
     return f"tg_{hashlib.md5(f'{channel}_{msg_id}'.encode()).hexdigest()[:12]}"
 
 
-def _scrape_channel(channel: str) -> list[Job]:
+def _is_job_post(text: str) -> bool:
+    lower = text.lower()
+    return any(signal in lower for signal in JOB_SIGNALS)
+
+
+def _scrape_channel(channel: str) -> list:
     jobs = []
     try:
         url = f"https://t.me/s/{channel}"
@@ -36,10 +53,15 @@ def _scrape_channel(channel: str) -> list[Job]:
 
             text = text_el.get_text(separator=" ", strip=True)
 
+            # Must look like an actual job post, not a discussion or article
+            if not _is_job_post(text):
+                continue
+
             # Extract first line as title
             lines = [l.strip() for l in text.splitlines() if l.strip()]
             title = lines[0][:120] if lines else text[:120]
 
+            # Title or first 300 chars must match our role keywords
             if not _title_match(title) and not _title_match(text[:300]):
                 continue
 
@@ -61,7 +83,7 @@ def _scrape_channel(channel: str) -> list[Job]:
     return jobs
 
 
-def scrape() -> list[Job]:
+def scrape() -> list:
     jobs = []
     for channel in CHANNELS:
         ch_jobs = _scrape_channel(channel)
