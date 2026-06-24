@@ -47,6 +47,7 @@ SOURCES = [
     "skelar",
     "squad",
     "gr8tech",
+    "ajax",
     "evoplay",
     "headway",
     # UA job boards
