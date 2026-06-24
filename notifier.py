@@ -18,15 +18,10 @@ def _post(text: str) -> None:
     }, timeout=10)
 
 
-def send_job(job: Job, score: int, reason: str) -> bool:
-    filled = min(score, 10)
-    bar = "🟩" * filled + "⬜" * (10 - filled)
-
+def send_job(job: Job) -> bool:
     text = (
         f"💼 *{job.title}*\n"
         f"🏢 {job.company} · _{job.source}_\n"
-        f"⭐ {score}/10 {bar}\n"
-        f"💡 {reason}\n"
         f"🔗 [Відкрити вакансію]({job.url})"
     )
 

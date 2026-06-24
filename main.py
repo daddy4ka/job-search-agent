@@ -86,16 +86,12 @@ def run():
         send_summary(dict(source_counts), 0, 0)
         return
 
-    print("\nScoring jobs with Claude...")
-    scored = score_jobs(new_jobs)
-
     sent = 0
-    for job, score, reason in scored:
-        mark_seen(job, score)
-        if score >= MIN_SCORE:
-            success = send_job(job, score, reason)
-            if success:
-                sent += 1
+    for job in new_jobs:
+        mark_seen(job, 0)
+        success = send_job(job)
+        if success:
+            sent += 1
 
     send_summary(dict(source_counts), len(new_jobs), sent)
     print(f"\nDone. Sent {sent} notifications.")
