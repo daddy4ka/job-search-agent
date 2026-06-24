@@ -294,6 +294,37 @@ def scrape_skelar() -> list[Job]:
     return _scrape_ashby("SKELAR", "SKELAR", "SKELAR")
 
 
+def scrape_squad() -> list[Job]:
+    jobs = []
+    try:
+        api_headers = {**HEADERS, "Referer": "https://squad.tech/careers", "Accept": "application/json"}
+        resp = requests.get("https://squad.tech/api/v1/vacancies?page=0&pageLimit=200", headers=api_headers, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        seen = set()
+        for j in data.get("vacancies", []):
+            title = j.get("title", "")
+            if not _title_match(title):
+                continue
+            slug = j.get("humanReadableId", "")
+            if slug in seen:
+                continue
+            seen.add(slug)
+            offices = j.get("offices", [])
+            location = offices[0].get("name", "") if offices else j.get("country", "")
+            jobs.append(Job(
+                id=_make_id("squad", slug),
+                title=title,
+                company="Squad",
+                url=f"https://squad.tech/careers/{slug}" if slug else "https://squad.tech/careers",
+                description=location,
+                source="Squad",
+            ))
+    except Exception as e:
+        print(f"[Squad] Error: {e}")
+    return jobs
+
+
 def scrape_headway() -> list[Job]:
     jobs = []
     try:

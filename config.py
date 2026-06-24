@@ -45,6 +45,7 @@ SOURCES = [
     "grammarly",
     "superhuman",
     "skelar",
+    "squad",
     "evoplay",
     "headway",
     # UA job boards
