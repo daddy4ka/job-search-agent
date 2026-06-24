@@ -45,12 +45,7 @@ def send_job(job: Job, score: int, reason: str) -> bool:
         return False
 
 
-def send_summary(
-    source_counts: dict[str, int],
-    total_new: int,
-    total_sent: int,
-    top_scored: list[tuple[str, int]] | None = None,
-) -> None:
+def send_summary(source_counts, total_new, total_sent) -> None:
     total_scraped = sum(source_counts.values())
 
     lines = ["📊 *Job scan complete*\n"]

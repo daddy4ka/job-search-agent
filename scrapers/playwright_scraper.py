@@ -19,7 +19,7 @@ def _get_html(url: str, wait_selector: str = "body", timeout: int = 25000) -> st
                 extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
             )
             page = ctx.new_page()
-            page.goto(url, timeout=timeout, wait_until="networkidle")
+            page.goto(url, timeout=timeout, wait_until="domcontentloaded")
             try:
                 page.wait_for_selector(wait_selector, timeout=10000)
             except Exception:
