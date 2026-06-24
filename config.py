@@ -38,7 +38,6 @@ SOURCES = [
     "luxoft",
     "sigma",
     "dataart",
-    "lohika",
     "playtika",
     "wix",
     "grammarly",
