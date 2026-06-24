@@ -67,37 +67,37 @@ def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) 
 # ── UA Outsourcers ────────────────────────────────────────────────────────────
 
 def scrape_ciklum() -> list[Job]:
-    return _scrape_lever("ciklum", "Ciklum", "Ciklum")
+    return []  # no public API found
 
 def scrape_intellias() -> list[Job]:
-    return _scrape_greenhouse("intellias", "Intellias", "Intellias")
+    return _scrape_lever("intellias", "Intellias", "Intellias")
 
 def scrape_nix() -> list[Job]:
-    return _scrape_greenhouse("n-ix", "N-iX", "N-iX")
+    return _scrape_greenhouse("nix", "N-iX", "N-iX")
 
 def scrape_eleks() -> list[Job]:
-    return _scrape_greenhouse("eleks", "ELEKS", "ELEKS")
+    return _scrape_lever("eleks", "ELEKS", "ELEKS")
 
 def scrape_softserve() -> list[Job]:
-    return _scrape_greenhouse("softserveinc", "SoftServe", "SoftServe")
+    return []  # no public API found
 
 def scrape_dataart() -> list[Job]:
-    return _scrape_greenhouse("dataart", "DataArt", "DataArt")
+    return []  # no public API found
 
 def scrape_playtika() -> list[Job]:
-    return _scrape_greenhouse("playtika", "Playtika", "Playtika")
+    return []  # no public API found
 
 def scrape_wix() -> list[Job]:
-    return _scrape_greenhouse("wix", "Wix", "Wix")
+    return []  # no public API found
 
 def scrape_grammarly() -> list[Job]:
-    return _scrape_greenhouse("grammarly", "Grammarly", "Grammarly")
+    return []  # no public API found
 
 def scrape_lohika() -> list[Job]:
-    return _scrape_lever("lohika", "Lohika", "Lohika")
+    return []  # no public API found
 
 def scrape_sigma() -> list[Job]:
-    return _scrape_lever("sigma-software", "Sigma Software", "Sigma")
+    return []  # no public API found
 
 
 def scrape_luxoft() -> list[Job]:
