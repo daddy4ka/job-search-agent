@@ -302,6 +302,53 @@ def scrape_ajax() -> list[Job]:
     return _scrape_lever("ajax", "Ajax Systems", "Ajax")
 
 
+def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str, keywords: list[str]) -> list[Job]:
+    jobs = []
+    seen = set()
+    try:
+        base = f"https://{tenant}.wd1.myworkdayjobs.com"
+        url = f"{base}/wday/cxs/{tenant}/{site}/jobs"
+        api_headers = {**HEADERS, "Accept": "application/json", "Content-Type": "application/json"}
+        for kw in keywords:
+            offset = 0
+            while True:
+                resp = requests.post(url, headers=api_headers, json={"limit": 20, "offset": offset, "searchText": kw}, timeout=20)
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                postings = data.get("jobPostings", [])
+                total = data.get("total", 0)
+                for j in postings:
+                    path = j.get("externalPath", "")
+                    if not path or path in seen:
+                        continue
+                    title = j.get("title", "")
+                    if not _title_match(title):
+                        continue
+                    seen.add(path)
+                    jobs.append(Job(
+                        id=_make_id(source_label, path),
+                        title=title,
+                        company=company_name,
+                        url=f"{base}/{site}{path}",
+                        description=j.get("locationsText", ""),
+                        source=source_label,
+                    ))
+                offset += 20
+                if offset >= total or offset >= 300:
+                    break
+    except Exception as e:
+        print(f"[{source_label}] Workday error: {e}")
+    return jobs
+
+
+def scrape_dxc() -> list[Job]:
+    return _scrape_workday(
+        tenant="dxctechnology", site="dxcjobs", company_name="DXC Technology", source_label="DXC",
+        keywords=["analyst", "analytics", "bi lead", "head of data"],
+    )
+
+
 def scrape_squad() -> list[Job]:
     jobs = []
     try:

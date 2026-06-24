@@ -48,6 +48,7 @@ SOURCES = [
     "squad",
     "gr8tech",
     "ajax",
+    "dxc",
     "evoplay",
     "headway",
     # UA job boards
