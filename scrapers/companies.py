@@ -290,6 +290,10 @@ def scrape_superhuman() -> list[Job]:
     return _scrape_ashby("Superhuman Platform Inc", "Superhuman", "Superhuman")
 
 
+def scrape_skelar() -> list[Job]:
+    return _scrape_ashby("SKELAR", "SKELAR", "SKELAR")
+
+
 def scrape_headway() -> list[Job]:
     jobs = []
     try:
