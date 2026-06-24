@@ -54,6 +54,7 @@ SOURCES = [
     "tieto",
     "fractal",
     "novadigital",
+    "temabit",
     "evoplay",
     "headway",
     # UA job boards

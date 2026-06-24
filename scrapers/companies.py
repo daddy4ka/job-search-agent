@@ -343,6 +343,32 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
     return jobs
 
 
+def scrape_temabit() -> list[Job]:
+    jobs = []
+    try:
+        from bs4 import BeautifulSoup
+        resp = requests.get("https://careers.temabit.com/job-sitemap.xml", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "xml")
+        urls = [loc.text for loc in soup.find_all("loc") if "/job/" in loc.text]
+        for url in urls:
+            slug = url.rstrip("/").split("/")[-1]
+            title = slug.replace("-", " ").title()
+            if not _title_match(title):
+                continue
+            jobs.append(Job(
+                id=_make_id("temabit", slug),
+                title=title,
+                company="Temabit / Fozzy Group",
+                url=url,
+                description="Ukraine",
+                source="Temabit",
+            ))
+    except Exception as e:
+        print(f"[Temabit] Error: {e}")
+    return jobs
+
+
 def scrape_novadigital() -> list[Job]:
     jobs = []
     try:

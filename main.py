@@ -10,6 +10,7 @@ from scrapers.companies import (
     scrape_playtika, scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart, scrape_wix,
     scrape_ciklum, scrape_grammarly, scrape_superhuman, scrape_skelar, scrape_squad, scrape_gr8tech,
     scrape_ajax, scrape_dxc, scrape_zone3000, scrape_nixsolutions, scrape_tieto, scrape_fractal, scrape_novadigital,
+    scrape_temabit,
     scrape_evoplay, scrape_headway,
 )
 from scrapers.boards import scrape_weworkremotely, scrape_remoteco, scrape_relocate, scrape_otta
@@ -44,6 +45,7 @@ SCRAPERS = {
     "tieto":          scrape_tieto,
     "fractal":        scrape_fractal,
     "novadigital":    scrape_novadigital,
+    "temabit":        scrape_temabit,
     "evoplay":        scrape_evoplay,
     "headway":        scrape_headway,
     # UA job boards
