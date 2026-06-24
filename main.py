@@ -8,7 +8,7 @@ from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
     scrape_intellias, scrape_eleks, scrape_nix, scrape_epam, scrape_globallogic,
     scrape_playtika, scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart, scrape_wix,
-    scrape_ciklum, scrape_grammarly, scrape_superhuman, scrape_skelar, scrape_squad, scrape_gr8tech,
+    scrape_ciklum, scrape_superhuman, scrape_skelar, scrape_squad, scrape_gr8tech,
     scrape_ajax, scrape_dxc, scrape_zone3000, scrape_nixsolutions, scrape_tieto, scrape_fractal, scrape_novadigital,
     scrape_temabit,
     scrape_evoplay, scrape_headway,
@@ -33,7 +33,6 @@ SCRAPERS = {
     "wix":            scrape_wix,
     # UA outsourcers — Playwright
     "ciklum":         scrape_ciklum,
-    "grammarly":      scrape_grammarly,
     "superhuman":     scrape_superhuman,
     "skelar":         scrape_skelar,
     "squad":          scrape_squad,

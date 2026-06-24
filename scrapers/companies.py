@@ -283,9 +283,6 @@ def scrape_wix() -> list[Job]:
         print(f"[Wix] Error: {e}")
     return jobs
 
-def scrape_grammarly() -> list[Job]:
-    return []  # no public API found
-
 
 def scrape_superhuman() -> list[Job]:
     return _scrape_ashby("Superhuman Platform Inc", "Superhuman", "Superhuman")
