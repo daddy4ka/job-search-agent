@@ -11,7 +11,6 @@ class Job:
     source: str
 
 
-# Keywords that must appear in job title (case-insensitive)
 TITLE_MUST_HAVE = [
     # Head-level
     "head of data", "head of analytics", "head of bi", "head of business intelligence",
@@ -26,18 +25,23 @@ TITLE_MUST_HAVE = [
     "chief data", "cdo", "vp of data", "vp of analytics",
     # Governance & strategy
     "data governance lead", "data office",
-    # Analyst roles (Claude scoring filters seniority at level 2)
+    # Analyst roles
     "lead data analyst", "senior data analyst", "principal data",
     "data analyst", "bi analyst", "business intelligence analyst",
     "analytics analyst", "marketing analyst", "product analyst",
     "аналітик", "дата аналітик", "бі аналітик",
 ]
 
+# Search-based feeds — each returns latest 25 matching jobs
+# Multiple terms ensure broad coverage; title filter applied after
 DOU_FEEDS = [
-    "https://jobs.dou.ua/vacancies/feeds/?category=Data+Science",
-    "https://jobs.dou.ua/vacancies/feeds/?category=Management",
-    "https://jobs.dou.ua/vacancies/feeds/?category=Analytics",
-    "https://jobs.dou.ua/vacancies/feeds/?category=Product+Management",
+    "https://jobs.dou.ua/vacancies/feeds/?search=analyst",
+    "https://jobs.dou.ua/vacancies/feeds/?search=analytics",
+    "https://jobs.dou.ua/vacancies/feeds/?search=head+of+data",
+    "https://jobs.dou.ua/vacancies/feeds/?search=head+of+analytics",
+    "https://jobs.dou.ua/vacancies/feeds/?search=bi+analyst",
+    "https://jobs.dou.ua/vacancies/feeds/?search=data+lead",
+    "https://jobs.dou.ua/vacancies/feeds/?search=%D0%B0%D0%BD%D0%B0%D0%BB%D1%96%D1%82%D0%B8%D0%BA",
 ]
 
 
@@ -46,7 +50,7 @@ def _title_match(title: str) -> bool:
     return any(kw in t for kw in TITLE_MUST_HAVE)
 
 
-def scrape() -> list[Job]:
+def scrape() -> list:
     jobs = []
     seen_ids = set()
 
@@ -74,4 +78,5 @@ def scrape() -> list[Job]:
         except Exception as e:
             print(f"[DOU] Error fetching {feed_url}: {e}")
 
+    print(f"  [DOU] {len(jobs)} jobs after title filter")
     return jobs
