@@ -30,13 +30,27 @@ TELEGRAM_CHAT_ID = "235956039"
 ANTHROPIC_API_KEY = ""  # Set via GitHub Actions secret ANTHROPIC_API_KEY
 
 SOURCES = [
+    # UA outsourcers
     "epam",
     "globallogic",
     "intellias",
     "eleks",
     "ciklum",
     "nix",
+    "softserve",
+    "luxoft",
+    "sigma",
+    "dataart",
+    "lohika",
+    "playtika",
+    "wix",
+    "grammarly",
+    # UA job boards
     "dou",
     "djinni",
-    "linkedin",
+    "relocate",
+    # International remote boards
+    "weworkremotely",
+    "remoteco",
+    "otta",
 ]

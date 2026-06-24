@@ -5,7 +5,12 @@ from scrapers.dou import scrape as scrape_dou
 from scrapers.djinni import scrape as scrape_djinni
 from scrapers.companies import (
     scrape_epam, scrape_globallogic, scrape_intellias,
-    scrape_eleks, scrape_ciklum, scrape_nix, scrape_linkedin,
+    scrape_eleks, scrape_ciklum, scrape_nix,
+    scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart,
+    scrape_lohika, scrape_playtika, scrape_wix, scrape_grammarly,
+)
+from scrapers.boards import (
+    scrape_weworkremotely, scrape_remoteco, scrape_otta, scrape_relocate,
 )
 from tracker import filter_new, mark_seen
 from matcher import score_jobs
@@ -13,22 +18,35 @@ from notifier import send_job, send_summary
 
 
 SCRAPERS = {
-    "dou": scrape_dou,
-    "djinni": scrape_djinni,
+    # UA outsourcers
     "epam": scrape_epam,
     "globallogic": scrape_globallogic,
     "intellias": scrape_intellias,
     "eleks": scrape_eleks,
     "ciklum": scrape_ciklum,
     "nix": scrape_nix,
-    "linkedin": scrape_linkedin,
+    "softserve": scrape_softserve,
+    "luxoft": scrape_luxoft,
+    "sigma": scrape_sigma,
+    "dataart": scrape_dataart,
+    "lohika": scrape_lohika,
+    "playtika": scrape_playtika,
+    "wix": scrape_wix,
+    "grammarly": scrape_grammarly,
+    # UA job boards
+    "dou": scrape_dou,
+    "djinni": scrape_djinni,
+    "relocate": scrape_relocate,
+    # International remote boards
+    "weworkremotely": scrape_weworkremotely,
+    "remoteco": scrape_remoteco,
+    "otta": scrape_otta,
 }
 
 
 def run():
     print("=== Job Search Agent starting ===")
 
-    # 1. Scrape all sources
     all_jobs = []
     source_counts: dict[str, int] = defaultdict(int)
 
@@ -48,7 +66,6 @@ def run():
 
     print(f"\nTotal scraped: {sum(source_counts.values())}")
 
-    # 2. Filter already-seen jobs
     new_jobs = filter_new(all_jobs)
     print(f"New (unseen): {len(new_jobs)}")
 
@@ -56,11 +73,9 @@ def run():
         send_summary(dict(source_counts), 0, 0)
         return
 
-    # 3. Score with Claude
     print("\nScoring jobs with Claude...")
     scored = score_jobs(new_jobs)
 
-    # 4. Send relevant ones to Telegram and mark all as seen
     sent = 0
     for job, score, reason in scored:
         mark_seen(job, score)

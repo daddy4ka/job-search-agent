@@ -11,7 +11,6 @@ def _make_id(source: str, url: str) -> str:
 
 
 # ── Lever public API ──────────────────────────────────────────────────────────
-# URL: https://api.lever.co/v0/postings/SLUG?mode=json
 
 def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> list[Job]:
     jobs = []
@@ -39,7 +38,6 @@ def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> li
 
 
 # ── Greenhouse public API ─────────────────────────────────────────────────────
-# URL: https://boards-api.greenhouse.io/v1/boards/SLUG/jobs?content=true
 
 def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) -> list[Job]:
     jobs = []
@@ -66,62 +64,74 @@ def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) 
     return jobs
 
 
-# ── Workday XML feed ──────────────────────────────────────────────────────────
+# ── UA Outsourcers ────────────────────────────────────────────────────────────
 
-def _scrape_workday_xml(feed_url: str, company_name: str, source_label: str) -> list[Job]:
-    """Some companies expose a public XML/JSON feed via Workday."""
-    from bs4 import BeautifulSoup
+def scrape_ciklum() -> list[Job]:
+    return _scrape_lever("ciklum", "Ciklum", "Ciklum")
+
+def scrape_intellias() -> list[Job]:
+    return _scrape_greenhouse("intellias", "Intellias", "Intellias")
+
+def scrape_nix() -> list[Job]:
+    return _scrape_greenhouse("n-ix", "N-iX", "N-iX")
+
+def scrape_eleks() -> list[Job]:
+    return _scrape_greenhouse("eleks", "ELEKS", "ELEKS")
+
+def scrape_softserve() -> list[Job]:
+    return _scrape_greenhouse("softserveinc", "SoftServe", "SoftServe")
+
+def scrape_dataart() -> list[Job]:
+    return _scrape_greenhouse("dataart", "DataArt", "DataArt")
+
+def scrape_playtika() -> list[Job]:
+    return _scrape_greenhouse("playtika", "Playtika", "Playtika")
+
+def scrape_wix() -> list[Job]:
+    return _scrape_greenhouse("wix", "Wix", "Wix")
+
+def scrape_grammarly() -> list[Job]:
+    return _scrape_greenhouse("grammarly", "Grammarly", "Grammarly")
+
+def scrape_lohika() -> list[Job]:
+    return _scrape_lever("lohika", "Lohika", "Lohika")
+
+def scrape_sigma() -> list[Job]:
+    return _scrape_lever("sigma-software", "Sigma Software", "Sigma")
+
+
+def scrape_luxoft() -> list[Job]:
     jobs = []
     try:
-        resp = requests.get(feed_url, headers=HEADERS, timeout=15)
-        soup = BeautifulSoup(resp.text, "lxml")
-        for item in soup.select("jobposting, position"):
-            title = item.select_one("title, jobtitle")
-            link = item.select_one("link, url")
-            desc = item.select_one("description, jobdescription")
-            if not title:
+        url = "https://career.luxoft.com/search-jobs/?keyword=data+analytics&remote=true"
+        resp = requests.get(url, headers=HEADERS, timeout=15)
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for item in soup.select(".job-item, .vacancy, article, li.job"):
+            title_el = item.select_one("h2, h3, h4, .title, a")
+            link_el = item.select_one("a[href]")
+            if not title_el:
                 continue
-            title_text = title.get_text(strip=True)
-            if not _title_match(title_text):
+            title = title_el.get_text(strip=True)
+            if not _title_match(title):
                 continue
-            job_url = link.get_text(strip=True) if link else feed_url
+            href = link_el["href"] if link_el else ""
+            if href and not href.startswith("http"):
+                href = "https://career.luxoft.com" + href
             jobs.append(Job(
-                id=_make_id(source_label, job_url),
-                title=title_text,
-                company=company_name,
-                url=job_url,
-                description=desc.get_text(strip=True)[:2000] if desc else "",
-                source=source_label,
+                id=_make_id("luxoft", href),
+                title=title,
+                company="Luxoft",
+                url=href,
+                description=item.get_text(separator=" ", strip=True)[:2000],
+                source="Luxoft",
             ))
     except Exception as e:
-        print(f"[{source_label}] Workday error: {e}")
+        print(f"[Luxoft] Error: {e}")
     return jobs
 
 
-# ── Individual company scrapers ───────────────────────────────────────────────
-
-def scrape_ciklum() -> list[Job]:
-    # Ciklum uses Lever
-    return _scrape_lever("ciklum", "Ciklum", "Ciklum")
-
-
-def scrape_intellias() -> list[Job]:
-    # Intellias uses Greenhouse
-    return _scrape_greenhouse("intellias", "Intellias", "Intellias")
-
-
-def scrape_nix() -> list[Job]:
-    # N-iX uses Greenhouse
-    return _scrape_greenhouse("n-ix", "N-iX", "N-iX")
-
-
-def scrape_eleks() -> list[Job]:
-    # ELEKS uses Greenhouse
-    return _scrape_greenhouse("eleks", "ELEKS", "ELEKS")
-
-
 def scrape_epam() -> list[Job]:
-    # EPAM uses their own portal — scrape search JSON endpoint
     jobs = []
     try:
         url = (
@@ -151,13 +161,9 @@ def scrape_epam() -> list[Job]:
 
 
 def scrape_globallogic() -> list[Job]:
-    # GlobalLogic uses Workday — try their public search API
     jobs = []
     try:
-        url = (
-            "https://career.globallogic.com/careers/searchjobs/?"
-            "query=data+analytics&region=Ukraine&pagesize=50"
-        )
+        url = "https://career.globallogic.com/careers/searchjobs/?query=data+analytics&region=Ukraine&pagesize=50"
         resp = requests.get(url, headers=HEADERS, timeout=15)
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -182,47 +188,4 @@ def scrape_globallogic() -> list[Job]:
             ))
     except Exception as e:
         print(f"[GlobalLogic] Error: {e}")
-    return jobs
-
-
-def scrape_linkedin() -> list[Job]:
-    """LinkedIn public job search — no auth required."""
-    jobs = []
-    searches = [
-        "Head+of+Data+Analytics&location=Ukraine",
-        "Head+of+BI+Analytics&location=Ukraine",
-        "Business+Intelligence+Lead&location=Ukraine",
-        "Head+of+Analytics+remote",
-        "Director+of+Analytics+remote",
-    ]
-    seen_ids = set()
-    try:
-        for query in searches:
-            url = f"https://www.linkedin.com/jobs/search/?keywords={query}&f_TPR=r86400"
-            resp = requests.get(url, headers=HEADERS, timeout=15)
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(resp.text, "html.parser")
-            for item in soup.select(".base-card, .job-search-card"):
-                title_el = item.select_one(".base-search-card__title, h3")
-                company_el = item.select_one(".base-search-card__subtitle, h4")
-                link_el = item.select_one("a[href]")
-                if not title_el or not link_el:
-                    continue
-                title = title_el.get_text(strip=True)
-                if not _title_match(title):
-                    continue
-                href = link_el["href"].split("?")[0]
-                if href in seen_ids:
-                    continue
-                seen_ids.add(href)
-                jobs.append(Job(
-                    id=_make_id("linkedin", href),
-                    title=title,
-                    company=company_el.get_text(strip=True) if company_el else "LinkedIn",
-                    url=href,
-                    description=item.get_text(separator=" ", strip=True)[:2000],
-                    source="LinkedIn",
-                ))
-    except Exception as e:
-        print(f"[LinkedIn] Error: {e}")
     return jobs
