@@ -294,6 +294,10 @@ def scrape_skelar() -> list[Job]:
     return _scrape_ashby("SKELAR", "SKELAR", "SKELAR")
 
 
+def scrape_gr8tech() -> list[Job]:
+    return _scrape_greenhouse("gr8tech", "GR8 Tech", "GR8 Tech")
+
+
 def scrape_squad() -> list[Job]:
     jobs = []
     try:

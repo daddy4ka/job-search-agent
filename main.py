@@ -8,7 +8,7 @@ from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
     scrape_intellias, scrape_eleks, scrape_nix, scrape_epam, scrape_globallogic,
     scrape_playtika, scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart, scrape_wix,
-    scrape_ciklum, scrape_grammarly, scrape_superhuman, scrape_skelar, scrape_squad,
+    scrape_ciklum, scrape_grammarly, scrape_superhuman, scrape_skelar, scrape_squad, scrape_gr8tech,
     scrape_evoplay, scrape_headway,
 )
 from scrapers.boards import scrape_weworkremotely, scrape_remoteco, scrape_relocate, scrape_otta
@@ -35,6 +35,7 @@ SCRAPERS = {
     "superhuman":     scrape_superhuman,
     "skelar":         scrape_skelar,
     "squad":          scrape_squad,
+    "gr8tech":        scrape_gr8tech,
     "evoplay":        scrape_evoplay,
     "headway":        scrape_headway,
     # UA job boards
