@@ -6,7 +6,7 @@ from scrapers.dou import scrape as scrape_dou
 from scrapers.djinni import scrape as scrape_djinni
 from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
-    scrape_intellias, scrape_eleks, scrape_nix, scrape_lohika,
+    scrape_intellias, scrape_eleks, scrape_nix,
     scrape_playtika, scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart, scrape_wix,
 )
 from scrapers.boards import scrape_weworkremotely, scrape_remoteco, scrape_relocate, scrape_otta
@@ -18,31 +18,28 @@ from notifier import send_job, send_summary
 
 
 SCRAPERS = {
-    # UA outsourcers — API-based (reliable)
-    "intellias":    scrape_intellias,    # Lever API
-    "eleks":        scrape_eleks,        # Lever API
-    "nix":          scrape_nix,          # Greenhouse API
-    "playtika":     scrape_playtika,     # Greenhouse API
-    # UA outsourcers — Playwright (JS-rendered)
-    "epam":         scrape_epam,
-    "globallogic":  scrape_globallogic,
-    "luxoft":       scrape_luxoft,
-    "softserve":    scrape_softserve,
-    "ciklum":       scrape_ciklum,
-    "dataart":      scrape_dataart,
-    "sigma":        scrape_sigma,
-    "grammarly":    scrape_grammarly,
-    "wix":          scrape_wix,
-    "lohika":       scrape_lohika,       # returns [] — no public API
+    # UA outsourcers — API-based
+    "intellias":      scrape_intellias,
+    "eleks":          scrape_eleks,
+    "nix":            scrape_nix,
+    "playtika":       scrape_playtika,
+    "softserve":      scrape_softserve,
+    "luxoft":         scrape_luxoft,
+    "sigma":          scrape_sigma,
+    "dataart":        scrape_dataart,
+    "wix":            scrape_wix,
+    # UA outsourcers — Playwright
+    "ciklum":         scrape_ciklum,
+    "grammarly":      scrape_grammarly,
     # UA job boards
-    "dou":          scrape_dou,          # RSS search feeds
-    "djinni":       scrape_djinni,       # RSS category feeds
-    "telegram":     scrape_telegram,     # 4 Telegram channels
+    "dou":            scrape_dou,
+    "djinni":         scrape_djinni,
+    "telegram":       scrape_telegram,
     # International
-    "weworkremotely": scrape_weworkremotely,  # RSS
-    "remoteco":     scrape_remoteco,     # HTML via proxy
-    "relocate":     scrape_relocate,     # HTML via proxy
-    "otta":         scrape_otta,         # returns [] — API broken
+    "weworkremotely": scrape_weworkremotely,
+    "remoteco":       scrape_remoteco,
+    "relocate":       scrape_relocate,
+    "otta":           scrape_otta,
 }
 
 
