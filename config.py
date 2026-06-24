@@ -52,6 +52,7 @@ SOURCES = [
     "zone3000",
     "nixsolutions",
     "tieto",
+    "fractal",
     "evoplay",
     "headway",
     # UA job boards

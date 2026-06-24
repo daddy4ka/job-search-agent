@@ -1,5 +1,6 @@
 """Scrapers for company career pages using Lever/Greenhouse public APIs."""
 import hashlib
+import re
 import requests
 from scrapers.dou import Job, _title_match
 
@@ -339,6 +340,50 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
                     break
     except Exception as e:
         print(f"[{source_label}] Workday error: {e}")
+    return jobs
+
+
+def scrape_fractal() -> list[Job]:
+    jobs = []
+    try:
+        from playwright.sync_api import sync_playwright
+        from bs4 import BeautifulSoup
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(user_agent=HEADERS["User-Agent"])
+            page = context.new_page()
+            page.goto("https://career.fractal.partners/ua/vacancy/", timeout=90000, wait_until="domcontentloaded")
+            try:
+                page.wait_for_selector("a.job-card", timeout=20000)
+            except Exception:
+                pass
+            page.wait_for_timeout(4000)
+            content = page.content()
+            browser.close()
+        base = "https://career.fractal.partners"
+        soup = BeautifulSoup(content, "html.parser")
+        seen = set()
+        for a in soup.select("a.job-card"):
+            href = a.get("href", "")
+            if not href or href in seen:
+                continue
+            seen.add(href)
+            h3 = a.select_one("h3.job-title-text")
+            if not h3:
+                continue
+            title = re.sub(r"[\U0001F300-\U0001FFFF]", "", h3.get_text(strip=True)).strip()
+            if not title or not _title_match(title):
+                continue
+            jobs.append(Job(
+                id=_make_id("fractal", href),
+                title=title,
+                company="Fractal Partners",
+                url=base + href if not href.startswith("http") else href,
+                description="Ukraine",
+                source="Fractal Partners",
+            ))
+    except Exception as e:
+        print(f"[Fractal Partners] Error: {e}")
     return jobs
 
 
