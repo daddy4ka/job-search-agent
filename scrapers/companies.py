@@ -357,11 +357,13 @@ def scrape_nixsolutions() -> list[Job]:
             if not href.startswith("http"):
                 href = base + href
             slug = href.rstrip("/").split("/")[-1]
-            if not slug or slug == "vacancies" or href in seen:
+            if not slug or slug == "vacancies":
+                continue
+            title = a.get_text(strip=True)
+            if not title or href in seen:
                 continue
             seen.add(href)
-            title = a.get_text(strip=True)
-            if not title or not _title_match(title):
+            if not _title_match(title):
                 continue
             jobs.append(Job(
                 id=_make_id("nixsolutions", slug),
