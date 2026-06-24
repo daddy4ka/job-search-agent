@@ -3,7 +3,7 @@ from collections import defaultdict
 from config import MIN_SCORE, SOURCES
 from scrapers.dou import scrape as scrape_dou
 from scrapers.djinni import scrape as scrape_djinni
-from scrapers.indeed import scrape as scrape_indeed
+from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
     scrape_epam, scrape_globallogic, scrape_intellias,
     scrape_eleks, scrape_ciklum, scrape_nix,
@@ -37,7 +37,7 @@ SCRAPERS = {
     # UA job boards
     "dou": scrape_dou,
     "djinni": scrape_djinni,
-    "indeed": scrape_indeed,
+    "telegram": scrape_telegram,
     "relocate": scrape_relocate,
     # International remote boards
     "weworkremotely": scrape_weworkremotely,

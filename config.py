@@ -48,6 +48,7 @@ SOURCES = [
     # UA job boards
     "dou",
     "djinni",
+    "telegram",
     "relocate",
     # International remote boards
     "weworkremotely",
