@@ -194,6 +194,71 @@ def scrape_grammarly() -> list[Job]:
     return []  # no public API found
 
 
+def scrape_globallogic() -> list[Job]:
+    import re as _re
+    import time as _time
+    from bs4 import BeautifulSoup
+
+    jobs = []
+    seen = set()
+
+    try:
+        base = "https://www.globallogic.com"
+        page_headers = {**HEADERS, "Accept": "text/html"}
+        page = 1
+        while True:
+            url = (
+                f"{base}/career-search-page/?experience=none&location=none"
+                if page == 1
+                else f"{base}/career-search-page/page/{page}/?experience=none&location=none"
+            )
+            resp = requests.get(url, headers=page_headers, timeout=20)
+            if resp.status_code != 200:
+                break
+            soup = BeautifulSoup(resp.text, "html.parser")
+            job_boxes = soup.select("a.job_box")
+            if not job_boxes:
+                break
+            for jb in job_boxes:
+                href = jb.get("href", "")
+                if not href or href in seen:
+                    continue
+                seen.add(href)
+                h4 = jb.select_one("h4")
+                if not h4:
+                    continue
+                title = _re.sub(r"\s*IRC\d+(-\d+)?\s*$", "", h4.get_text(strip=True)).strip()
+                if not _title_match(title):
+                    continue
+                location_parts = [s.get_text(strip=True) for s in jb.select(".job_location, .job_tag")]
+                location = " | ".join(p for p in location_parts if p)
+                jobs.append(Job(
+                    id=_make_id("globallogic", href),
+                    title=title,
+                    company="GlobalLogic",
+                    url=href,
+                    description=location,
+                    source="GlobalLogic",
+                ))
+            next_link = soup.select_one("a.next, a[rel='next']")
+            if not next_link:
+                max_pg = page
+                for pl in soup.select("a.page-numbers:not(.next):not(.prev)"):
+                    try:
+                        n = int(pl.get_text(strip=True))
+                        if n > max_pg:
+                            max_pg = n
+                    except ValueError:
+                        pass
+                if page >= max_pg:
+                    break
+            page += 1
+            _time.sleep(0.3)
+    except Exception as e:
+        print(f"[GlobalLogic] Error: {e}")
+    return jobs
+
+
 def scrape_epam() -> list[Job]:
     jobs = []
     try:

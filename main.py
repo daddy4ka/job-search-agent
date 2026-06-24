@@ -6,7 +6,7 @@ from scrapers.dou import scrape as scrape_dou
 from scrapers.djinni import scrape as scrape_djinni
 from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
-    scrape_intellias, scrape_eleks, scrape_nix, scrape_epam,
+    scrape_intellias, scrape_eleks, scrape_nix, scrape_epam, scrape_globallogic,
     scrape_playtika, scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart, scrape_wix,
 )
 from scrapers.boards import scrape_weworkremotely, scrape_remoteco, scrape_relocate, scrape_otta
@@ -23,6 +23,7 @@ SCRAPERS = {
     "eleks":          scrape_eleks,
     "nix":            scrape_nix,
     "epam":           scrape_epam,
+    "globallogic":    scrape_globallogic,
     "playtika":       scrape_playtika,
     "softserve":      scrape_softserve,
     "luxoft":         scrape_luxoft,

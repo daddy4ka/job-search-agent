@@ -35,6 +35,7 @@ SOURCES = [
     "eleks",
     "nix",
     "epam",
+    "globallogic",
     "softserve",
     "luxoft",
     "sigma",
