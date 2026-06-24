@@ -15,6 +15,14 @@ from scrapers.playwright_scraper import (
     scrape_weworkremotely, scrape_remoteco, scrape_relocate,
     scrape_softserve as scrape_softserve_pw,
     scrape_ciklum as scrape_ciklum_pw,
+    scrape_epam as scrape_epam_pw,
+    scrape_globallogic as scrape_globallogic_pw,
+    scrape_luxoft as scrape_luxoft_pw,
+    scrape_dataart as scrape_dataart_pw,
+    scrape_sigma as scrape_sigma_pw,
+    scrape_grammarly as scrape_grammarly_pw,
+    scrape_wix as scrape_wix_pw,
+    scrape_playtika as scrape_playtika_pw,
 )
 from tracker import filter_new, mark_seen
 from matcher import score_jobs
@@ -23,20 +31,20 @@ from notifier import send_job, send_summary
 
 SCRAPERS = {
     # UA outsourcers
-    "epam": scrape_epam,
-    "globallogic": scrape_globallogic,
+    "epam": scrape_epam_pw,
+    "globallogic": scrape_globallogic_pw,
     "intellias": scrape_intellias,
     "eleks": scrape_eleks,
     "ciklum": scrape_ciklum_pw,
     "nix": scrape_nix,
     "softserve": scrape_softserve_pw,
-    "luxoft": scrape_luxoft,
-    "sigma": scrape_sigma,
-    "dataart": scrape_dataart,
+    "luxoft": scrape_luxoft_pw,
+    "sigma": scrape_sigma_pw,
+    "dataart": scrape_dataart_pw,
     "lohika": scrape_lohika,
-    "playtika": scrape_playtika,
-    "wix": scrape_wix,
-    "grammarly": scrape_grammarly,
+    "playtika": scrape_playtika_pw,
+    "wix": scrape_wix_pw,
+    "grammarly": scrape_grammarly_pw,
     # UA job boards
     "dou": scrape_dou,
     "djinni": scrape_djinni,

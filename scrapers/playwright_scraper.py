@@ -209,3 +209,251 @@ def scrape_ciklum() -> list[Job]:
             source="Ciklum",
         ))
     return jobs
+
+
+# ── EPAM ──────────────────────────────────────────────────────────────────────
+
+def scrape_epam() -> list[Job]:
+    jobs = []
+    url = "https://www.epam.com/careers/job-listings?sort=newest&department=Data+%26+Analytics"
+    html = _get_html(url, "[class*='search-result'], [class*='job']")
+    if not html:
+        return jobs
+    soup = BeautifulSoup(html, "html.parser")
+    for item in soup.select("[class*='search-result__item'], [class*='job-item'], [class*='job-card']"):
+        title_el = item.select_one("h3, h4, [class*='title']")
+        link_el = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = title_el.get_text(strip=True)
+        if not _title_match(title):
+            continue
+        href = link_el["href"] if link_el else ""
+        if not href.startswith("http"):
+            href = "https://www.epam.com" + href
+        jobs.append(Job(
+            id=_make_id("epam", href),
+            title=title,
+            company="EPAM Systems",
+            url=href,
+            description=item.get_text(separator=" ", strip=True)[:2000],
+            source="EPAM",
+        ))
+    return jobs
+
+
+# ── GlobalLogic ───────────────────────────────────────────────────────────────
+
+def scrape_globallogic() -> list[Job]:
+    jobs = []
+    url = "https://www.globallogic.com/ua/careers/?search=data"
+    html = _get_html(url, "[class*='career'], [class*='job'], article")
+    if not html:
+        return jobs
+    soup = BeautifulSoup(html, "html.parser")
+    for item in soup.select("[class*='career-item'], [class*='job-item'], article"):
+        title_el = item.select_one("h2, h3, h4, [class*='title']")
+        link_el = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = title_el.get_text(strip=True)
+        if not _title_match(title):
+            continue
+        href = link_el["href"] if link_el else ""
+        if not href.startswith("http"):
+            href = "https://www.globallogic.com" + href
+        jobs.append(Job(
+            id=_make_id("globallogic", href),
+            title=title,
+            company="GlobalLogic",
+            url=href,
+            description=item.get_text(separator=" ", strip=True)[:2000],
+            source="GlobalLogic",
+        ))
+    return jobs
+
+
+# ── Luxoft ────────────────────────────────────────────────────────────────────
+
+def scrape_luxoft() -> list[Job]:
+    jobs = []
+    url = "https://career.luxoft.com/search-jobs/?keyword=data+analytics"
+    html = _get_html(url, "[class*='job'], [class*='vacancy']")
+    if not html:
+        return jobs
+    soup = BeautifulSoup(html, "html.parser")
+    for item in soup.select("[class*='job-item'], [class*='vacancy'], li[class*='job']"):
+        title_el = item.select_one("h2, h3, h4, [class*='title'], a")
+        link_el = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = title_el.get_text(strip=True)
+        if not _title_match(title):
+            continue
+        href = link_el["href"] if link_el else ""
+        if not href.startswith("http"):
+            href = "https://career.luxoft.com" + href
+        jobs.append(Job(
+            id=_make_id("luxoft", href),
+            title=title,
+            company="Luxoft",
+            url=href,
+            description=item.get_text(separator=" ", strip=True)[:2000],
+            source="Luxoft",
+        ))
+    return jobs
+
+
+# ── DataArt ───────────────────────────────────────────────────────────────────
+
+def scrape_dataart() -> list[Job]:
+    jobs = []
+    url = "https://www.dataart.com/career?keyword=data+analytics"
+    html = _get_html(url, "[class*='job'], [class*='vacancy'], article")
+    if not html:
+        return jobs
+    soup = BeautifulSoup(html, "html.parser")
+    for item in soup.select("[class*='job-card'], [class*='vacancy'], article"):
+        title_el = item.select_one("h2, h3, h4, [class*='title']")
+        link_el = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = title_el.get_text(strip=True)
+        if not _title_match(title):
+            continue
+        href = link_el["href"] if link_el else ""
+        if not href.startswith("http"):
+            href = "https://www.dataart.com" + href
+        jobs.append(Job(
+            id=_make_id("dataart", href),
+            title=title,
+            company="DataArt",
+            url=href,
+            description=item.get_text(separator=" ", strip=True)[:2000],
+            source="DataArt",
+        ))
+    return jobs
+
+
+# ── Sigma Software ────────────────────────────────────────────────────────────
+
+def scrape_sigma() -> list[Job]:
+    jobs = []
+    url = "https://sigma.software/about/career?category=Data"
+    html = _get_html(url, "[class*='job'], [class*='vacancy'], article")
+    if not html:
+        return jobs
+    soup = BeautifulSoup(html, "html.parser")
+    for item in soup.select("[class*='vacancy'], [class*='job-item'], article"):
+        title_el = item.select_one("h2, h3, h4, [class*='title']")
+        link_el = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = title_el.get_text(strip=True)
+        if not _title_match(title):
+            continue
+        href = link_el["href"] if link_el else ""
+        if not href.startswith("http"):
+            href = "https://sigma.software" + href
+        jobs.append(Job(
+            id=_make_id("sigma", href),
+            title=title,
+            company="Sigma Software",
+            url=href,
+            description=item.get_text(separator=" ", strip=True)[:2000],
+            source="Sigma",
+        ))
+    return jobs
+
+
+# ── Grammarly ─────────────────────────────────────────────────────────────────
+
+def scrape_grammarly() -> list[Job]:
+    jobs = []
+    url = "https://www.grammarly.com/jobs/all-departments"
+    html = _get_html(url, "[class*='job'], [class*='position']")
+    if not html:
+        return jobs
+    soup = BeautifulSoup(html, "html.parser")
+    for item in soup.select("[class*='job-item'], [class*='position'], li"):
+        title_el = item.select_one("h2, h3, h4, [class*='title'], a")
+        link_el = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = title_el.get_text(strip=True)
+        if not _title_match(title):
+            continue
+        href = link_el["href"] if link_el else ""
+        if not href.startswith("http"):
+            href = "https://www.grammarly.com" + href
+        jobs.append(Job(
+            id=_make_id("grammarly", href),
+            title=title,
+            company="Grammarly",
+            url=href,
+            description=item.get_text(separator=" ", strip=True)[:2000],
+            source="Grammarly",
+        ))
+    return jobs
+
+
+# ── Wix ───────────────────────────────────────────────────────────────────────
+
+def scrape_wix() -> list[Job]:
+    jobs = []
+    url = "https://www.wix.com/jobs/locations/all-locations/departments/data"
+    html = _get_html(url, "[class*='job'], [class*='position'], article")
+    if not html:
+        return jobs
+    soup = BeautifulSoup(html, "html.parser")
+    for item in soup.select("[class*='job'], [class*='position-item'], article"):
+        title_el = item.select_one("h2, h3, h4, [class*='title'], a")
+        link_el = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = title_el.get_text(strip=True)
+        if not _title_match(title):
+            continue
+        href = link_el["href"] if link_el else ""
+        if not href.startswith("http"):
+            href = "https://www.wix.com" + href
+        jobs.append(Job(
+            id=_make_id("wix", href),
+            title=title,
+            company="Wix",
+            url=href,
+            description=item.get_text(separator=" ", strip=True)[:2000],
+            source="Wix",
+        ))
+    return jobs
+
+
+# ── Playtika ──────────────────────────────────────────────────────────────────
+
+def scrape_playtika() -> list[Job]:
+    jobs = []
+    url = "https://www.playtika.com/careers/open-positions/?department=Data"
+    html = _get_html(url, "[class*='job'], [class*='position'], article")
+    if not html:
+        return jobs
+    soup = BeautifulSoup(html, "html.parser")
+    for item in soup.select("[class*='job-card'], [class*='position'], article"):
+        title_el = item.select_one("h2, h3, h4, [class*='title']")
+        link_el = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = title_el.get_text(strip=True)
+        if not _title_match(title):
+            continue
+        href = link_el["href"] if link_el else ""
+        if not href.startswith("http"):
+            href = "https://www.playtika.com" + href
+        jobs.append(Job(
+            id=_make_id("playtika", href),
+            title=title,
+            company="Playtika",
+            url=href,
+            description=item.get_text(separator=" ", strip=True)[:2000],
+            source="Playtika",
+        ))
+    return jobs
