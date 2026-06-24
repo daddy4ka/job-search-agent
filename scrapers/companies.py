@@ -193,6 +193,54 @@ def scrape_wix() -> list[Job]:
 def scrape_grammarly() -> list[Job]:
     return []  # no public API found
 
+
+def scrape_epam() -> list[Job]:
+    jobs = []
+    try:
+        base = "https://careers.epam.com"
+        api_headers = {**HEADERS, "Referer": base, "Accept": "application/json"}
+        KEYWORDS = ["analyst", "analytics", "bi lead", "head of data", "head of analytics", "data lead", "business intelligence"]
+        seen = set()
+        for kw in KEYWORDS:
+            offset = 0
+            while True:
+                resp = requests.get(
+                    f"{base}/api/jobs/v2/search/careers-i18n",
+                    headers=api_headers,
+                    params={"from": offset, "lang": "en", "q": kw, "size": 50},
+                    timeout=15,
+                )
+                if resp.status_code != 200 or not resp.text.strip():
+                    break
+                data = resp.json().get("data", {})
+                items = data.get("jobs", [])
+                total = data.get("total", 0)
+                for j in items:
+                    uid = j.get("uid") or j.get("_key", "")
+                    if not uid or uid in seen:
+                        continue
+                    title = j.get("name", "")
+                    if not _title_match(title):
+                        continue
+                    seen.add(uid)
+                    country = j.get("country", [{}])[0].get("name", "") if j.get("country") else ""
+                    city = j.get("city", [{}])[0].get("name", "") if j.get("city") else ""
+                    job_url = f"{base}/en/jobs/{uid}"
+                    jobs.append(Job(
+                        id=_make_id("epam", uid),
+                        title=title,
+                        company="EPAM",
+                        url=job_url,
+                        description=f"{city}, {country}".strip(", "),
+                        source="EPAM",
+                    ))
+                offset += 50
+                if offset >= total or offset >= 1000:
+                    break
+    except Exception as e:
+        print(f"[EPAM] Error: {e}")
+    return jobs
+
 def scrape_lohika() -> list[Job]:
     return []  # no public API found
 
@@ -286,61 +334,3 @@ def scrape_luxoft() -> list[Job]:
     return jobs
 
 
-def scrape_epam() -> list[Job]:
-    jobs = []
-    try:
-        url = (
-            "https://www.epam.com/api/careers/search"
-            "?filterDepartments=Data+%26+Analytics&pageSize=50&pageNumber=0"
-        )
-        resp = requests.get(url, headers=HEADERS, timeout=15)
-        data = resp.json()
-        for item in data.get("vacancies", data.get("jobs", data.get("results", []))):
-            title = item.get("title", item.get("jobTitle", ""))
-            if not _title_match(title):
-                continue
-            job_url = item.get("url", item.get("applyUrl", ""))
-            if job_url and not job_url.startswith("http"):
-                job_url = "https://www.epam.com" + job_url
-            jobs.append(Job(
-                id=_make_id("epam", job_url),
-                title=title,
-                company="EPAM Systems",
-                url=job_url,
-                description=item.get("description", "")[:2000],
-                source="EPAM",
-            ))
-    except Exception as e:
-        print(f"[EPAM] API error: {e}")
-    return jobs
-
-
-def scrape_globallogic() -> list[Job]:
-    jobs = []
-    try:
-        url = "https://career.globallogic.com/careers/searchjobs/?query=data+analytics&region=Ukraine&pagesize=50"
-        resp = requests.get(url, headers=HEADERS, timeout=15)
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(resp.text, "html.parser")
-        for item in soup.select("li.resultLink, .job-listing, article"):
-            title_el = item.select_one("h2, h3, h4, a")
-            link_el = item.select_one("a[href]")
-            if not title_el:
-                continue
-            title = title_el.get_text(strip=True)
-            if not _title_match(title):
-                continue
-            href = link_el["href"] if link_el else ""
-            if href and not href.startswith("http"):
-                href = "https://career.globallogic.com" + href
-            jobs.append(Job(
-                id=_make_id("globallogic", href),
-                title=title,
-                company="GlobalLogic",
-                url=href,
-                description=item.get_text(separator=" ", strip=True)[:2000],
-                source="GlobalLogic",
-            ))
-    except Exception as e:
-        print(f"[GlobalLogic] Error: {e}")
-    return jobs

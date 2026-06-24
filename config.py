@@ -34,6 +34,7 @@ SOURCES = [
     "intellias",
     "eleks",
     "nix",
+    "epam",
     "softserve",
     "luxoft",
     "sigma",
