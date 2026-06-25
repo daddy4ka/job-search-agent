@@ -270,7 +270,7 @@ def scrape_wix() -> list[Job]:
             loc = j.get("location", {})
             city = loc.get("city", "")
             country = loc.get("country", "")
-            job_url = j.get("ref", "") or f"https://jobs.smartrecruiters.com/Wix2/{j.get('id','')}"
+            job_url = f"https://jobs.smartrecruiters.com/Wix2/{j.get('id', '')}"
             jobs.append(Job(
                 id=_make_id("wix", ref),
                 title=title,
@@ -725,7 +725,8 @@ def scrape_epam() -> list[Job]:
                     seen.add(uid)
                     country = j.get("country", [{}])[0].get("name", "") if j.get("country") else ""
                     city = j.get("city", [{}])[0].get("name", "") if j.get("city") else ""
-                    job_url = f"{base}/en/jobs/{uid}"
+                    seo_url = j.get("seo", {}).get("url", "")
+                    job_url = f"{base}{seo_url}" if seo_url else f"{base}/en/jobs/{uid}"
                     jobs.append(Job(
                         id=_make_id("epam", uid),
                         title=title,
@@ -819,7 +820,7 @@ def scrape_luxoft() -> list[Job]:
                     continue
                 seen_keys.add(vr_key)
                 slug = v.get("slug", "")
-                job_url = f"{base}/job/{slug}" if slug else base
+                job_url = f"{base}/jobs/{slug}" if slug else base
                 location = f"{v.get('city', '')} | {v.get('country', '')}".strip(" |")
                 jobs.append(Job(
                     id=_make_id("luxoft", vr_key),
