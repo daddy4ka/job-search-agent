@@ -83,16 +83,13 @@ def run():
     print(f"New (unseen): {len(new_jobs)}")
 
     new_counts = defaultdict(int)
-    sent = 0
     for job in new_jobs:
         mark_seen(job)
         new_counts[job.source] += 1
-        success = send_job(job)
-        if success:
-            sent += 1
+        send_job(job)
 
-    send_summary(dict(source_counts), dict(new_counts), len(new_jobs), sent, started_at)
-    print(f"\nDone. Sent {sent} notifications.")
+    send_summary(dict(source_counts), dict(new_counts), started_at)
+    print(f"\nDone. Sent {len(new_jobs)} notifications.")
 
 
 if __name__ == "__main__":

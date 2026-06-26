@@ -50,46 +50,28 @@ def send_job(job: Job) -> bool:
         return False
 
 
-def send_summary(source_counts, new_counts, total_new, total_sent, started_at) -> None:
+def send_summary(source_counts, new_counts, started_at) -> None:
     def esc(s):
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
     total_scraped = sum(source_counts.values())
+    total_new = sum(new_counts.values())
     finished_at = datetime.now(timezone.utc)
     duration_sec = int((finished_at - started_at).total_seconds())
     duration_str = f"{duration_sec // 60}хв {duration_sec % 60}с"
     finished_str = finished_at.strftime("%d.%m.%Y %H:%M UTC")
 
     lines = [
-        "📊 <b>Job scan complete</b>",
-        f"🕐 {finished_str} · тривалість {duration_str}",
+        f"📊 Job scan · {finished_str} · {duration_str}",
         "",
     ]
 
-    source_icons = {
-        "dou": "🟡", "djinni": "🟣",
-        "epam": "🔵", "globallogic": "🟢",
-        "intellias": "🔷", "eleks": "🟠",
-        "ciklum": "🔴", "n-ix": "⚪", "nix": "⚪",
-        "relocate": "✈️", "weworkremotely": "🌍", "remote.co": "🌐",
-        "telegram": "📢", "softserve": "🟩", "luxoft": "🔸",
-        "dataart": "🎨", "sigma": "Σ", "grammarly": "✏️",
-        "wix": "🌀", "playtika": "🎮",
-    }
-
-    for source, count in sorted(source_counts.items()):
-        key = source.lower()
-        icon = next((v for k, v in source_icons.items() if k in key), "▪️")
+    for source, count in sorted(source_counts.items(), key=lambda x: -x[1]):
         new_c = new_counts.get(source, 0)
-        new_str = f" <b>(+{new_c} нових)</b>" if new_c > 0 else ""
-        lines.append(f"{icon} {esc(source)}: {count}{new_str}")
+        new_str = f" / {new_c}" if new_c > 0 else " / 0"
+        lines.append(f"{esc(source):<20} {count}{new_str}")
 
     lines.append("")
-    lines.append(f"🔢 Знайдено: {total_scraped} | Нових: {total_new} | Надіслано: {total_sent}")
-
-    if total_sent == 0:
-        lines.append("😶 Нових релевантних вакансій немає")
-    else:
-        lines.append(f"✅ {total_sent} вакансій надіслано вище")
+    lines.append(f"всього / нових: {total_scraped} / {total_new}")
 
     _post_html("\n".join(lines))
