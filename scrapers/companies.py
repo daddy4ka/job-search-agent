@@ -835,6 +835,39 @@ def scrape_luxoft() -> list[Job]:
     return jobs
 
 
+def scrape_avenga() -> list[Job]:
+    jobs = []
+    try:
+        from bs4 import BeautifulSoup
+        base = "https://career.avenga.com"
+        headers = {**HEADERS, "Accept": "text/html"}
+        seen = set()
+        for page in range(1, 30):
+            resp = requests.get(f"{base}/jobs?page={page}", headers=headers, timeout=15)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "html.parser")
+            links = [(a.get_text(strip=True), a["href"]) for a in soup.find_all("a", href=True)
+                     if "/jobs/" in a["href"] and a["href"] != f"{base}/jobs"]
+            new = [(t, h) for t, h in links if h not in seen]
+            if not new:
+                break
+            for title, url in new:
+                seen.add(url)
+                if not _title_match(title):
+                    continue
+                jobs.append(Job(
+                    id=_make_id("avenga", url),
+                    title=title,
+                    company="Avenga",
+                    url=url,
+                    description="",
+                    source="Avenga",
+                ))
+    except Exception as e:
+        print(f"[Avenga] Error: {e}")
+    return jobs
+
+
 def scrape_griddynamics() -> list[Job]:
     jobs = []
     try:

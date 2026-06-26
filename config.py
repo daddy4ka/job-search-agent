@@ -59,6 +59,7 @@ SOURCES = [
     "evoplay",
     "headway",
     "griddynamics",
+    "avenga",
     # UA job boards
     "dou",
     "djinni",
