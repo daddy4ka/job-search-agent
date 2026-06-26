@@ -61,6 +61,7 @@ SOURCES = [
     "griddynamics",
     "avenga",
     "betterme",
+    "obrio",
     # UA job boards
     "dou",
     "djinni",

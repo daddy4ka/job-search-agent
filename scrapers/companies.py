@@ -835,6 +835,10 @@ def scrape_luxoft() -> list[Job]:
     return jobs
 
 
+def scrape_obrio() -> list[Job]:
+    return _scrape_ashby("OBRIO", "OBRIO", "OBRIO")
+
+
 def scrape_betterme() -> list[Job]:
     jobs = []
     try:
