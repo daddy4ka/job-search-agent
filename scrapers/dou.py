@@ -12,29 +12,38 @@ class Job:
 
 
 TITLE_MUST_HAVE = [
+    # Generic
+    "analyst", "analytics",
     # Head-level
     "head of data", "head of analytics", "head of bi", "head of business intelligence",
-    "head of r&d", "head of research", "head of insight",
+    "head of r&d", "head of research", "head of insight", "head of insights",
+    "head of growth", "head of strategy", "head of performance",
+    "head of product analytics", "head of data science",
     # Lead-level
     "bi lead", "data lead", "analytics lead",
     "business intelligence lead", "business intelligence manager",
-    "analytics chapter lead",
+    "analytics chapter lead", "growth lead", "strategy lead", "insights lead",
+    "insight lead",
     # Manager/Director/VP
     "data analytics manager", "analytics manager",
     "director of data", "director of analytics",
     "chief data", "cdo", "vp of data", "vp of analytics",
+    "growth manager", "insights manager", "insight manager",
+    "performance manager", "revenue operations manager",
+    "product analytics manager", "data science manager",
+    "marketing strategy manager", "marketing manager", "strategy manager",
     # Governance & strategy
     "data governance lead", "data office",
+    "strategic analytics", "decision science", "decision analytics",
+    "revenue analytics",
     # Analyst roles
     "lead data analyst", "senior data analyst", "principal data",
     "data analyst", "bi analyst", "business intelligence analyst",
     "analytics analyst", "marketing analyst", "product analyst",
+    "growth analyst", "insights analyst", "insight analyst",
     "аналітик", "дата аналітик", "бі аналітик",
-    # Generic
-    "analyst",
-    # R&D / Strategy
+    # R&D
     "r&d team lead", "r&d lead", "research and development lead",
-    "marketing strategy manager", "marketing manager", "strategy manager",
 ]
 
 # Each feed returns latest 25 jobs — combine keywords + categories for broader coverage

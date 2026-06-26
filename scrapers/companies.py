@@ -2,7 +2,7 @@
 import hashlib
 import re
 import requests
-from scrapers.dou import Job, _title_match
+from scrapers.dou import Job, _title_match, TITLE_MUST_HAVE
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; JobSearchBot/1.0)"}
 
@@ -699,12 +699,7 @@ def scrape_epam() -> list[Job]:
     try:
         base = "https://careers.epam.com"
         api_headers = {**HEADERS, "Referer": base, "Accept": "application/json"}
-        KEYWORDS = [
-            "analyst", "analytics", "bi lead", "head of data", "head of analytics",
-            "data lead", "business intelligence", "head of bi", "analytics manager",
-            "data analytics manager", "director of analytics", "chief data",
-            "vp of data", "vp of analytics", "data manager", "data governance",
-        ]
+        KEYWORDS = TITLE_MUST_HAVE
         seen = set()
         for kw in KEYWORDS:
             offset = 0
@@ -810,7 +805,7 @@ def scrape_luxoft() -> list[Job]:
             "X-Requested-With": "XMLHttpRequest",
         }
         seen_keys = set()
-        for keyword in ["analyst", "analytics", "business intelligence", "data lead", "bi", "manager", "director"]:
+        for keyword in TITLE_MUST_HAVE:
             resp = requests.get(f"{base}/ajax/filter-jobs", headers=api_headers, params={"keyword": keyword}, timeout=15)
             if resp.status_code != 200 or not resp.text.strip():
                 continue
