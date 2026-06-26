@@ -37,16 +37,25 @@ TITLE_MUST_HAVE = [
     "marketing strategy manager", "marketing manager", "strategy manager",
 ]
 
-# Search-based feeds — each returns latest 25 matching jobs
-# Multiple terms ensure broad coverage; title filter applied after
+# Each feed returns latest 25 jobs — combine keywords + categories for broader coverage
 DOU_FEEDS = [
+    # Keyword search
     "https://jobs.dou.ua/vacancies/feeds/?search=analyst",
     "https://jobs.dou.ua/vacancies/feeds/?search=analytics",
     "https://jobs.dou.ua/vacancies/feeds/?search=head+of+data",
     "https://jobs.dou.ua/vacancies/feeds/?search=head+of+analytics",
     "https://jobs.dou.ua/vacancies/feeds/?search=bi+analyst",
     "https://jobs.dou.ua/vacancies/feeds/?search=data+lead",
+    "https://jobs.dou.ua/vacancies/feeds/?search=bi+lead",
+    "https://jobs.dou.ua/vacancies/feeds/?search=data+manager",
+    "https://jobs.dou.ua/vacancies/feeds/?search=head+of+bi",
+    "https://jobs.dou.ua/vacancies/feeds/?search=analytics+manager",
     "https://jobs.dou.ua/vacancies/feeds/?search=%D0%B0%D0%BD%D0%B0%D0%BB%D1%96%D1%82%D0%B8%D0%BA",
+    "https://jobs.dou.ua/vacancies/feeds/?search=%D0%B0%D0%BD%D0%B0%D0%BB%D1%96%D1%82%D0%B8%D0%BA%D0%B0",
+    # Category feeds
+    "https://jobs.dou.ua/vacancies/feeds/?category=Analytics+%2F+BI",
+    "https://jobs.dou.ua/vacancies/feeds/?category=Data+Science",
+    "https://jobs.dou.ua/vacancies/feeds/?category=Management",
 ]
 
 
