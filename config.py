@@ -62,6 +62,7 @@ SOURCES = [
     "avenga",
     "betterme",
     "obrio",
+    "jooble",
     # UA job boards
     "dou",
     "djinni",
