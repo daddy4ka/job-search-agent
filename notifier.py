@@ -51,27 +51,33 @@ def send_job(job: Job) -> bool:
 
 
 def send_summary(source_counts, new_counts, started_at) -> None:
-    def esc(s):
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
     total_scraped = sum(source_counts.values())
     total_new = sum(new_counts.values())
     finished_at = datetime.now(timezone.utc)
     duration_sec = int((finished_at - started_at).total_seconds())
     duration_str = f"{duration_sec // 60}хв {duration_sec % 60}с"
-    finished_str = finished_at.strftime("%d.%m.%Y %H:%M UTC")
+    date_str = finished_at.strftime("%d.%m")
 
-    lines = [
-        f"📊 Job scan · {finished_str} · {duration_str}",
-        "",
+    def _bar(new, total, width=9):
+        if total == 0 or new == 0:
+            return "░" * width
+        filled = max(1, round(new / total * width))
+        return "█" * filled + "░" * (width - filled)
+
+    NAME_W = 13
+    SEP = "─" * 32
+
+    rows = [
+        (src, cnt, new_counts.get(src, 0))
+        for src, cnt in sorted(source_counts.items(), key=lambda x: -x[1])
+        if new_counts.get(src, 0) > 0
     ]
 
-    for source, count in sorted(source_counts.items(), key=lambda x: -x[1]):
-        new_c = new_counts.get(source, 0)
-        new_str = f" / {new_c}" if new_c > 0 else " / 0"
-        lines.append(f"{esc(source):<20} {count}{new_str}")
+    lines = [f"Job scan · {date_str} · {duration_str}", ""]
+    for src, total, new in rows:
+        name = src[:NAME_W]
+        lines.append(f"{name:<{NAME_W}} {total:>3} {_bar(new, total)}  {new:>3}")
 
-    lines.append("")
-    lines.append(f"всього / нових: {total_scraped} / {total_new}")
+    lines += ["", SEP, f"знайдено {total_scraped} · нових {total_new}"]
 
-    _post_html("\n".join(lines))
+    _post_html("<pre>" + "\n".join(lines) + "</pre>")
