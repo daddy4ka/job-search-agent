@@ -699,7 +699,12 @@ def scrape_epam() -> list[Job]:
     try:
         base = "https://careers.epam.com"
         api_headers = {**HEADERS, "Referer": base, "Accept": "application/json"}
-        KEYWORDS = ["analyst", "analytics", "bi lead", "head of data", "head of analytics", "data lead", "business intelligence"]
+        KEYWORDS = [
+            "analyst", "analytics", "bi lead", "head of data", "head of analytics",
+            "data lead", "business intelligence", "head of bi", "analytics manager",
+            "data analytics manager", "director of analytics", "chief data",
+            "vp of data", "vp of analytics", "data manager", "data governance",
+        ]
         seen = set()
         for kw in KEYWORDS:
             offset = 0
