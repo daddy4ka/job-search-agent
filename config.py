@@ -63,6 +63,7 @@ SOURCES = [
     "betterme",
     "obrio",
     "jooble",
+    "allstarsit",
     # UA job boards
     "dou",
     "djinni",

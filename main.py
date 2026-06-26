@@ -12,7 +12,7 @@ from scrapers.companies import (
     scrape_ajax, scrape_dxc, scrape_zone3000, scrape_nixsolutions, scrape_tieto, scrape_fractal, scrape_novadigital,
     scrape_temabit,
     scrape_evoplay, scrape_headway, scrape_griddynamics, scrape_avenga, scrape_betterme,
-    scrape_obrio, scrape_jooble,
+    scrape_obrio, scrape_jooble, scrape_allstarsit,
 )
 from scrapers.boards import scrape_weworkremotely
 from tracker import filter_new, mark_seen
@@ -53,6 +53,7 @@ SCRAPERS = {
     "betterme":       scrape_betterme,
     "obrio":          scrape_obrio,
     "jooble":         scrape_jooble,
+    "allstarsit":     scrape_allstarsit,
     # UA job boards
     "dou":            scrape_dou,
     "djinni":         scrape_djinni,

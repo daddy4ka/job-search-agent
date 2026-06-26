@@ -835,6 +835,44 @@ def scrape_luxoft() -> list[Job]:
     return jobs
 
 
+def scrape_allstarsit() -> list[Job]:
+    jobs = []
+    try:
+        from bs4 import BeautifulSoup
+        base = "https://www.allstarsit.com"
+        seen = set()
+        for page in range(1, 20):
+            resp = requests.get(f"{base}/careers/jobs?page={page}", headers=HEADERS, timeout=15)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "html.parser")
+            links = []
+            for a in soup.find_all("a", href=True):
+                if "/job-posts/" not in a["href"]:
+                    continue
+                title_el = a.select_one(".text-block-90") or a.select_one("[class*='text-block']")
+                title = title_el.get_text(strip=True) if title_el else a.get_text(strip=True)
+                links.append((title, a["href"]))
+            new = [(t, h) for t, h in links if h not in seen]
+            if not new:
+                break
+            for title, path in new:
+                seen.add(path)
+                if not _title_match(title):
+                    continue
+                url = f"{base}{path}" if path.startswith("/") else path
+                jobs.append(Job(
+                    id=_make_id("allstarsit", url),
+                    title=title,
+                    company="AllStarsIT",
+                    url=url,
+                    description="",
+                    source="AllStarsIT",
+                ))
+    except Exception as e:
+        print(f"[AllStarsIT] Error: {e}")
+    return jobs
+
+
 def scrape_jooble() -> list[Job]:
     jobs = []
     try:
