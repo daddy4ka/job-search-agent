@@ -65,6 +65,7 @@ SOURCES = [
     "jooble",
     "allstarsit",
     "autodoc",
+    "whitebit",
     # UA job boards
     "dou",
     "djinni",

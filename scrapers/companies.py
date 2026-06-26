@@ -1007,6 +1007,39 @@ def scrape_avenga() -> list[Job]:
     return jobs
 
 
+def scrape_whitebit() -> list[Job]:
+    jobs = []
+    try:
+        base = "https://whitebit.hurma.work"
+        headers = {**HEADERS, "Accept": "application/json"}
+        page = 1
+        while True:
+            resp = requests.get(f"{base}/api/vacancies?page={page}", headers=headers, timeout=15)
+            resp.raise_for_status()
+            result = resp.json().get("result", {})
+            items = result.get("data", [])
+            for v in items:
+                title = v.get("name", "")
+                if not _title_match(title):
+                    continue
+                vid = str(v.get("id", ""))
+                job_url = f"{base}/public-vacancies/{vid}"
+                jobs.append(Job(
+                    id=_make_id("whitebit", vid),
+                    title=title,
+                    company="WhiteBit",
+                    url=job_url,
+                    description="",
+                    source="WhiteBit",
+                ))
+            if page >= result.get("last_page", 1):
+                break
+            page += 1
+    except Exception as e:
+        print(f"[WhiteBit] Error: {e}")
+    return jobs
+
+
 def scrape_griddynamics() -> list[Job]:
     jobs = []
     try:
