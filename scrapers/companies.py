@@ -835,6 +835,45 @@ def scrape_luxoft() -> list[Job]:
     return jobs
 
 
+def scrape_autodoc() -> list[Job]:
+    jobs = []
+    try:
+        offset = 0
+        while True:
+            resp = requests.get(
+                "https://api.smartrecruiters.com/v1/companies/Autodoc3/postings",
+                headers=HEADERS, params={"limit": 100, "offset": offset}, timeout=15,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            items = data.get("content", [])
+            if not items:
+                break
+            for j in items:
+                title = j.get("name", "")
+                if not _title_match(title):
+                    continue
+                job_id = j.get("id", "")
+                slug = j.get("ref", job_id)
+                url = f"https://jobs.smartrecruiters.com/Autodoc3/{job_id}"
+                loc = j.get("location", {})
+                location = ", ".join(filter(None, [loc.get("city", ""), loc.get("country", "")]))
+                jobs.append(Job(
+                    id=_make_id("autodoc", url),
+                    title=title,
+                    company="Autodoc",
+                    url=url,
+                    description=location,
+                    source="Autodoc",
+                ))
+            offset += len(items)
+            if offset >= data.get("totalFound", 0):
+                break
+    except Exception as e:
+        print(f"[Autodoc] Error: {e}")
+    return jobs
+
+
 def scrape_allstarsit() -> list[Job]:
     jobs = []
     try:

@@ -64,6 +64,7 @@ SOURCES = [
     "obrio",
     "jooble",
     "allstarsit",
+    "autodoc",
     # UA job boards
     "dou",
     "djinni",
