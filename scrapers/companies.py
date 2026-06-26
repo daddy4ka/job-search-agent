@@ -835,3 +835,33 @@ def scrape_luxoft() -> list[Job]:
     return jobs
 
 
+def scrape_griddynamics() -> list[Job]:
+    jobs = []
+    try:
+        from bs4 import BeautifulSoup
+        base = "https://www.griddynamics.com"
+        resp = requests.get(f"{base}/careers/discover-openings", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for a in soup.select("a.job-row[href*='/careers/vacancy/']"):
+            title_el = a.select_one(".job-title")
+            if not title_el:
+                continue
+            title = title_el.get_text(strip=True)
+            if not _title_match(title):
+                continue
+            location_el = a.select_one(".job-location")
+            location = location_el.get_text(strip=True) if location_el else ""
+            url = f"{base}{a['href']}"
+            jobs.append(Job(
+                id=_make_id("griddynamics", url),
+                title=title,
+                company="Grid Dynamics",
+                url=url,
+                description=location,
+                source="Grid Dynamics",
+            ))
+    except Exception as e:
+        print(f"[GridDynamics] Error: {e}")
+    return jobs
+

@@ -11,7 +11,7 @@ from scrapers.companies import (
     scrape_ciklum, scrape_superhuman, scrape_skelar, scrape_squad, scrape_gr8tech,
     scrape_ajax, scrape_dxc, scrape_zone3000, scrape_nixsolutions, scrape_tieto, scrape_fractal, scrape_novadigital,
     scrape_temabit,
-    scrape_evoplay, scrape_headway,
+    scrape_evoplay, scrape_headway, scrape_griddynamics,
 )
 from scrapers.boards import scrape_weworkremotely
 from tracker import filter_new, mark_seen
@@ -47,6 +47,7 @@ SCRAPERS = {
     "temabit":        scrape_temabit,
     "evoplay":        scrape_evoplay,
     "headway":        scrape_headway,
+    "griddynamics":   scrape_griddynamics,
     # UA job boards
     "dou":            scrape_dou,
     "djinni":         scrape_djinni,

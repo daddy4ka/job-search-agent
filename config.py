@@ -58,6 +58,7 @@ SOURCES = [
     "temabit",
     "evoplay",
     "headway",
+    "griddynamics",
     # UA job boards
     "dou",
     "djinni",
