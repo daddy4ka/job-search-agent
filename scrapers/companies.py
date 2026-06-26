@@ -835,6 +835,31 @@ def scrape_luxoft() -> list[Job]:
     return jobs
 
 
+def scrape_betterme() -> list[Job]:
+    jobs = []
+    try:
+        resp = requests.get("https://betterme.breezy.hr/json", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        for j in resp.json():
+            title = j.get("name", "")
+            if not _title_match(title):
+                continue
+            url = j.get("url", "")
+            loc = j.get("location", {})
+            location = ", ".join(filter(None, [loc.get("city", ""), loc.get("country", {}).get("name", "")]))
+            jobs.append(Job(
+                id=_make_id("betterme", url),
+                title=title,
+                company="BetterMe",
+                url=url,
+                description=location,
+                source="BetterMe",
+            ))
+    except Exception as e:
+        print(f"[BetterMe] Error: {e}")
+    return jobs
+
+
 def scrape_avenga() -> list[Job]:
     jobs = []
     try:

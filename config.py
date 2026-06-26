@@ -60,6 +60,7 @@ SOURCES = [
     "headway",
     "griddynamics",
     "avenga",
+    "betterme",
     # UA job boards
     "dou",
     "djinni",
