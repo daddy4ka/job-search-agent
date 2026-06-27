@@ -9,6 +9,7 @@ class Job:
     url: str
     description: str
     source: str
+    location: str = ""
 
 
 TITLE_MUST_HAVE = [

@@ -29,9 +29,11 @@ def send_job(job: Job) -> bool:
     def esc(s):
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
+    location_line = f"\n📍 {esc(job.location)}" if job.location else ""
     text = (
         f"💼 <b>{esc(job.title)}</b>\n"
-        f"🏢 {esc(job.company)} · <i>{esc(job.source)}</i>\n"
+        f"🏢 {esc(job.company)} · <i>{esc(job.source)}</i>"
+        f"{location_line}\n"
         f'🔗 <a href="{job.url}">Відкрити вакансію</a>'
     )
 

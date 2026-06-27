@@ -11,6 +11,26 @@ def _make_id(source: str, url: str) -> str:
     return f"{source}_{hashlib.md5(url.encode()).hexdigest()[:12]}"
 
 
+_COUNTRY = {
+    "ua": "Ukraine", "pl": "Poland", "de": "Germany", "pt": "Portugal",
+    "md": "Moldova", "ro": "Romania", "cz": "Czech Republic", "sk": "Slovakia",
+    "hu": "Hungary", "bg": "Bulgaria", "hr": "Croatia", "rs": "Serbia",
+    "gb": "UK", "nl": "Netherlands", "fr": "France", "es": "Spain",
+    "it": "Italy", "at": "Austria", "ch": "Switzerland", "se": "Sweden",
+    "no": "Norway", "dk": "Denmark", "fi": "Finland", "ee": "Estonia",
+    "lv": "Latvia", "lt": "Lithuania", "il": "Israel", "ae": "UAE",
+    "us": "USA", "ca": "Canada", "au": "Australia", "tr": "Turkey",
+    "ge": "Georgia", "am": "Armenia", "kz": "Kazakhstan",
+}
+
+def _sr_location(loc: dict) -> str:
+    city = loc.get("city", "")
+    country = _COUNTRY.get(loc.get("country", "").lower(), loc.get("country", ""))
+    place = ", ".join(filter(None, [city, country]))
+    work_type = "Remote" if loc.get("remote") else ("Hybrid" if loc.get("hybrid") else "On-site")
+    return " · ".join(filter(None, [work_type, place]))
+
+
 # ── Lever public API ──────────────────────────────────────────────────────────
 
 def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> list[Job]:
@@ -25,6 +45,8 @@ def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> li
                 continue
             job_url = item.get("hostedUrl", "")
             description = item.get("descriptionPlain", "") or item.get("description", "")
+            cats = item.get("categories", {})
+            location = cats.get("location", "") or cats.get("allLocations", [""])[0] if isinstance(cats.get("allLocations"), list) else ""
             jobs.append(Job(
                 id=_make_id(source_label, job_url),
                 title=title,
@@ -32,6 +54,7 @@ def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> li
                 url=job_url,
                 description=description[:2000],
                 source=source_label,
+                location=location,
             ))
     except Exception as e:
         print(f"[{source_label}] Lever API error: {e}")
@@ -52,6 +75,7 @@ def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) 
                 continue
             job_url = item.get("absolute_url", "")
             description = item.get("content", "")
+            location = item.get("location", {}).get("name", "")
             jobs.append(Job(
                 id=_make_id(source_label, job_url),
                 title=title,
@@ -59,6 +83,7 @@ def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) 
                 url=job_url,
                 description=description[:2000],
                 source=source_label,
+                location=location,
             ))
     except Exception as e:
         print(f"[{source_label}] Greenhouse API error: {e}")
@@ -100,14 +125,16 @@ def _scrape_ashby(org_name: str, company_name: str, source_label: str) -> list[J
                 continue
             jid = j.get("id", "")
             loc = j.get("locationName", "")
-            mode = j.get("workplaceType", "")
+            mode = j.get("workplaceType", "").replace("Remote", "Remote").replace("OnSite", "On-site").replace("Hybrid", "Hybrid")
+            location = " · ".join(filter(None, [mode, loc]))
             jobs.append(Job(
                 id=_make_id(source_label, jid),
                 title=title,
                 company=company_name,
                 url=f"https://jobs.ashbyhq.com/{slug}/{jid}",
-                description=f"{loc} | {mode}".strip(" |"),
+                description="",
                 source=source_label,
+                location=location,
             ))
     except Exception as e:
         print(f"[{source_label}] Ashby API error: {e}")
@@ -148,14 +175,16 @@ def scrape_ciklum() -> list[Job]:
                 if not _title_match(title):
                     continue
                 country = j.get("PrimaryLocationCountry", "")
-                mode = j.get("WorkplaceTypeCode", "").replace("ORA_", "").title()
+                mode = j.get("WorkplaceTypeCode", "").replace("ORA_REMOTE", "Remote").replace("ORA_", "").title()
+                location = " · ".join(filter(None, [mode, country]))
                 jobs.append(Job(
                     id=_make_id("ciklum", jid),
                     title=title,
                     company="Ciklum",
                     url=f"{job_base}/{jid}",
-                    description=f"{country} | {mode}".strip(" |"),
+                    description="",
                     source="Ciklum",
+                    location=location,
                 ))
             offset += 25
     except Exception as e:
@@ -198,8 +227,9 @@ def scrape_softserve() -> list[Job]:
                     title=title,
                     company="SoftServe",
                     url=job_url,
-                    description=f"{v.get('direction','')} | {v.get('city','')}",
+                    description="",
                     source="SoftServe",
+                    location=v.get("city", ""),
                 ))
             meta = data.get("meta", {})
             if page >= meta.get("last_page", 1):
@@ -267,17 +297,15 @@ def scrape_wix() -> list[Job]:
             title = j.get("name", "")
             if not _title_match(title):
                 continue
-            loc = j.get("location", {})
-            city = loc.get("city", "")
-            country = loc.get("country", "")
             job_url = f"https://jobs.smartrecruiters.com/Wix2/{j.get('id', '')}"
             jobs.append(Job(
                 id=_make_id("wix", ref),
                 title=title,
                 company="Wix",
                 url=job_url,
-                description=f"{city}, {country}".strip(", "),
+                description="",
                 source="Wix",
+                location=_sr_location(j.get("location", {})),
             ))
     except Exception as e:
         print(f"[Wix] Error: {e}")
@@ -329,8 +357,9 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
                         title=title,
                         company=company_name,
                         url=f"{base}/{site}{path}",
-                        description=j.get("locationsText", ""),
+                        description="",
                         source=source_label,
+                        location=j.get("locationsText", ""),
                     ))
                 offset += 20
                 if offset >= total or offset >= 300:
@@ -522,14 +551,14 @@ def scrape_zone3000() -> list[Job]:
             slug = j.get("url", "")
             loc = j.get("location", [])
             remote = j.get("remote", 0)
-            desc = "Remote" if remote else ""
             jobs.append(Job(
                 id=_make_id("zone3000", str(j.get("id", slug))),
                 title=title,
                 company="Zone3000",
                 url=f"https://zone3000.net/vacancies/{slug}" if slug else "https://zone3000.net/vacancies",
-                description=desc,
+                description="",
                 source="Zone3000",
+                location="Remote" if remote else "Ukraine",
             ))
     except Exception as e:
         print(f"[Zone3000] Error: {e}")
@@ -566,8 +595,9 @@ def scrape_squad() -> list[Job]:
                 title=title,
                 company="Squad",
                 url=f"https://squad.tech/careers/{slug}" if slug else "https://squad.tech/careers",
-                description=location,
+                description="",
                 source="Squad",
+                location=location,
             ))
     except Exception as e:
         print(f"[Squad] Error: {e}")
@@ -596,8 +626,9 @@ def scrape_headway() -> list[Job]:
                 title=title,
                 company="Headway",
                 url=j.get("url", "https://careers.headway.inc/jobs"),
-                description=location,
+                description="",
                 source="Headway",
+                location=location,
             ))
     except Exception as e:
         print(f"[Headway] Error: {e}")
@@ -621,8 +652,9 @@ def scrape_evoplay() -> list[Job]:
                 title=title,
                 company="Evoplay",
                 url=j.get("url", "https://evoplay.com.ua/uk/career/"),
-                description=city,
+                description="",
                 source="Evoplay",
+                location=city,
             ))
     except Exception as e:
         print(f"[Evoplay] Error: {e}")
@@ -672,8 +704,9 @@ def scrape_globallogic() -> list[Job]:
                     title=title,
                     company="GlobalLogic",
                     url=href,
-                    description=location,
+                    description="",
                     source="GlobalLogic",
+                    location=location,
                 ))
             next_link = soup.select_one("a.next, a[rel='next']")
             if not next_link:
@@ -732,8 +765,9 @@ def scrape_epam() -> list[Job]:
                         title=title,
                         company="EPAM",
                         url=job_url,
-                        description=f"{city}, {country}".strip(", "),
+                        description="",
                         source="EPAM",
+                        location=", ".join(filter(None, [city, country])),
                     ))
                 offset += 50
                 if offset >= total or offset >= 1000:
@@ -821,14 +855,15 @@ def scrape_luxoft() -> list[Job]:
                 seen_keys.add(vr_key)
                 slug = v.get("slug", "")
                 job_url = f"{base}/jobs/{slug}" if slug else base
-                location = f"{v.get('city', '')} | {v.get('country', '')}".strip(" |")
+                location = ", ".join(filter(None, [v.get("city", ""), v.get("country", "")]))
                 jobs.append(Job(
                     id=_make_id("luxoft", vr_key),
                     title=title,
                     company="Luxoft",
                     url=job_url,
-                    description=f"{v.get('specialization', '')} | {location}",
+                    description="",
                     source="Luxoft",
+                    location=location,
                 ))
     except Exception as e:
         print(f"[Luxoft] Error: {e}")
@@ -856,15 +891,14 @@ def scrape_autodoc() -> list[Job]:
                 job_id = j.get("id", "")
                 slug = j.get("ref", job_id)
                 url = f"https://jobs.smartrecruiters.com/Autodoc3/{job_id}"
-                loc = j.get("location", {})
-                location = ", ".join(filter(None, [loc.get("city", ""), loc.get("country", "")]))
                 jobs.append(Job(
                     id=_make_id("autodoc", url),
                     title=title,
                     company="Autodoc",
                     url=url,
-                    description=location,
+                    description="",
                     source="Autodoc",
+                    location=_sr_location(j.get("location", {})),
                 ))
             offset += len(items)
             if offset >= data.get("totalFound", 0):
@@ -966,8 +1000,9 @@ def scrape_betterme() -> list[Job]:
                 title=title,
                 company="BetterMe",
                 url=url,
-                description=location,
+                description="",
                 source="BetterMe",
+                location=location,
             ))
     except Exception as e:
         print(f"[BetterMe] Error: {e}")
@@ -1031,6 +1066,7 @@ def scrape_whitebit() -> list[Job]:
                     url=job_url,
                     description="",
                     source="WhiteBit",
+                    location=v.get("residence", ""),
                 ))
             if page >= result.get("last_page", 1):
                 break
@@ -1063,8 +1099,9 @@ def scrape_griddynamics() -> list[Job]:
                 title=title,
                 company="Grid Dynamics",
                 url=url,
-                description=location,
+                description="",
                 source="Grid Dynamics",
+                location=location,
             ))
     except Exception as e:
         print(f"[GridDynamics] Error: {e}")
