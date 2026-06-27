@@ -202,6 +202,7 @@ def scrape_eleks() -> list[Job]:
 
 def scrape_softserve() -> list[Job]:
     jobs = []
+    seen = set()
     try:
         base = "https://career.softserveinc.com"
         headers = {
@@ -221,6 +222,9 @@ def scrape_softserve() -> list[Job]:
                 if not _title_match(title):
                     continue
                 slug = v.get("urlSegment", "")
+                if slug in seen:
+                    continue
+                seen.add(slug)
                 job_url = f"{base}/en-us/vacancies/{slug}" if slug else base
                 jobs.append(Job(
                     id=_make_id("softserve", job_url),

@@ -59,14 +59,18 @@ def _create_log_sheet(wb):
 
 
 def filter_new(jobs):
-    if not TRACKER_PATH.exists():
-        return jobs
-    wb = openpyxl.load_workbook(TRACKER_PATH)
-    if SHEET_SEEN not in wb.sheetnames:
-        return jobs
-    ws = wb[SHEET_SEEN]
-    seen_ids = {str(row[0].value) for row in ws.iter_rows(min_row=2) if row[0].value}
-    return [j for j in jobs if j.id not in seen_ids]
+    seen_ids = set()
+    if TRACKER_PATH.exists():
+        wb = openpyxl.load_workbook(TRACKER_PATH)
+        if SHEET_SEEN in wb.sheetnames:
+            ws = wb[SHEET_SEEN]
+            seen_ids = {str(row[0].value) for row in ws.iter_rows(min_row=2) if row[0].value}
+    result = []
+    for j in jobs:
+        if j.id not in seen_ids:
+            seen_ids.add(j.id)  # deduplicate within current batch too
+            result.append(j)
+    return result
 
 
 def mark_seen(job: Job) -> None:
