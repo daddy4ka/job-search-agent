@@ -66,6 +66,7 @@ SOURCES = [
     "allstarsit",
     "autodoc",
     "whitebit",
+    "ideals",
     # UA job boards
     "dou",
     "djinni",

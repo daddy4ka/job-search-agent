@@ -986,6 +986,9 @@ def scrape_jooble() -> list[Job]:
 def scrape_obrio() -> list[Job]:
     return _scrape_ashby("OBRIO", "OBRIO", "OBRIO")
 
+def scrape_ideals() -> list[Job]:
+    return _scrape_ashby("ideals", "iDeals", "iDeals")
+
 
 def scrape_betterme() -> list[Job]:
     jobs = []
