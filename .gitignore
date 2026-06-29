@@ -4,3 +4,4 @@ __pycache__/
 .env
 *.log
 .claude/
+seen_jobs.xlsx

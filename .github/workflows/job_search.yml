@@ -13,6 +13,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Checkout tracker (seen_jobs)
+        run: |
+          git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/daddy4ka/job-search-tracker.git tracker_repo
+          cp tracker_repo/seen_jobs.xlsx . 2>/dev/null || true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -26,17 +31,18 @@ jobs:
 
       - name: Run job search agent
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           BRIGHTDATA_PASSWORD: ${{ secrets.BRIGHTDATA_PASSWORD }}
         run: python main.py
 
-      - name: Commit updated seen_jobs.xlsx
+      - name: Push updated seen_jobs to tracker repo
         run: |
+          cp seen_jobs.xlsx tracker_repo/
+          cd tracker_repo
           git config user.name "job-search-bot"
           git config user.email "bot@github-actions"
           git add seen_jobs.xlsx
           git diff --staged --quiet || git commit -m "chore: update seen_jobs [skip ci]"
           git pull --rebase
-          git push
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/daddy4ka/job-search-tracker.git main
