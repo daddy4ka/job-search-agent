@@ -4,15 +4,15 @@ import requests
 
 PROXY_HOST = "brd.superproxy.io"
 PROXY_PORT = 33335
-PROXY_USER = "brd-customer-hl_8b3a9889-zone-job_search"
 
 
 def get_session() -> requests.Session:
+    user = os.environ.get("BRIGHTDATA_USER", "")
     password = os.environ.get("BRIGHTDATA_PASSWORD", "")
-    if not password:
+    if not user or not password:
         return requests.Session()
 
-    proxy_url = f"http://{PROXY_USER}:{password}@{PROXY_HOST}:{PROXY_PORT}"
+    proxy_url = f"http://{user}:{password}@{PROXY_HOST}:{PROXY_PORT}"
     session = requests.Session()
     session.proxies = {"http": proxy_url, "https": proxy_url}
     session.verify = False

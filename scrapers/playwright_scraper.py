@@ -75,7 +75,7 @@ def scrape_epam() -> list:
 
     proxy = {
         "server": "brd.superproxy.io:33335",
-        "username": "brd-customer-hl_8b3a9889-zone-job_search",
+        "username": os.environ.get("BRIGHTDATA_USER", ""),
         "password": os.environ.get("BRIGHTDATA_PASSWORD", ""),
     }
 
