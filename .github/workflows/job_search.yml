@@ -15,7 +15,7 @@ jobs:
 
       - name: Checkout tracker (seen_jobs)
         run: |
-          git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/daddy4ka/job-search-tracker.git tracker_repo
+          git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/daddy4ka/job-search-data.git tracker_repo
           cp tracker_repo/seen_jobs.xlsx . 2>/dev/null || true
 
       - name: Set up Python
@@ -46,4 +46,4 @@ jobs:
           git add seen_jobs.xlsx
           git diff --staged --quiet || git commit -m "chore: update seen_jobs [skip ci]"
           git pull --rebase
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/daddy4ka/job-search-tracker.git main
+          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/daddy4ka/job-search-data.git main
