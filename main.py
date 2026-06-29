@@ -13,6 +13,7 @@ from scrapers.companies import (
     scrape_temabit,
     scrape_evoplay, scrape_headway, scrape_griddynamics, scrape_avenga, scrape_betterme,
     scrape_obrio, scrape_jooble, scrape_allstarsit, scrape_autodoc, scrape_whitebit, scrape_ideals,
+    scrape_genesis,
 )
 from scrapers.boards import scrape_weworkremotely
 from tracker import filter_new, mark_seen
@@ -57,6 +58,7 @@ SCRAPERS = {
     "autodoc":        scrape_autodoc,
     "whitebit":       scrape_whitebit,
     "ideals":         scrape_ideals,
+    "genesis":        scrape_genesis,
     # UA job boards
     "dou":            scrape_dou,
     "djinni":         scrape_djinni,
