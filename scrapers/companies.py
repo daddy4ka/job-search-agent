@@ -141,6 +141,44 @@ def _scrape_ashby(org_name: str, company_name: str, source_label: str) -> list[J
     return jobs
 
 
+# ── Breezy HR public API ──────────────────────────────────────────────────────
+
+def _scrape_breezy(slug: str, company: str, source: str) -> list[Job]:
+    jobs = []
+    try:
+        resp = requests.get(f"https://{slug}.breezy.hr/json", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        for item in resp.json():
+            title = item.get("name", "")
+            if not _title_match(title):
+                continue
+            loc = item.get("location", {})
+            city = loc.get("city", "")
+            country = loc.get("country", {}).get("name", "")
+            remote_val = loc.get("remote_details", {}).get("value", "")
+            is_remote = loc.get("is_remote", False)
+            if remote_val == "remote" or (is_remote and not remote_val):
+                work_type = "Remote"
+            elif remote_val == "hybrid":
+                work_type = "Hybrid"
+            else:
+                work_type = "On-site"
+            place = ", ".join(filter(None, [city, country]))
+            location = " · ".join(filter(None, [work_type, place]))
+            jobs.append(Job(
+                id=_make_id(slug, item.get("id", "")),
+                title=title,
+                company=company,
+                url=item.get("url", ""),
+                description="",
+                source=source,
+                location=location,
+            ))
+    except Exception as e:
+        print(f"[{source}] Error: {e}")
+    return jobs
+
+
 # ── UA Outsourcers ────────────────────────────────────────────────────────────
 
 def scrape_ciklum() -> list[Job]:
@@ -1114,3 +1152,6 @@ def scrape_griddynamics() -> list[Job]:
         print(f"[GridDynamics] Error: {e}")
     return jobs
 
+
+def scrape_genesis() -> list[Job]:
+    return _scrape_breezy("gen-tech", "Genesis", "Genesis")
