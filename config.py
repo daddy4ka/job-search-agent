@@ -24,8 +24,8 @@ Location preference: Ukraine (remote or Kyiv), EU remote, global remote
 # Minimum relevance score (0-10) to send notification
 MIN_SCORE = 6
 
-TELEGRAM_BOT_TOKEN = "8734395128:AAFxeNXXTaEb9FACNm3928XRvyh9-9B_RUU"
-TELEGRAM_CHAT_ID = "235956039"
+TELEGRAM_BOT_TOKEN = ""  # Set via GitHub Actions secret TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID = ""   # Set via GitHub Actions secret TELEGRAM_CHAT_ID
 
 ANTHROPIC_API_KEY = ""  # Set via GitHub Actions secret ANTHROPIC_API_KEY
 

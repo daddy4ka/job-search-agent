@@ -1,16 +1,18 @@
 import os
 import requests
 from datetime import datetime, timezone
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 from scrapers.dou import Job
 
 
+def _get_token() -> str:
+    return os.environ.get("TELEGRAM_BOT_TOKEN", "")
+
 def _get_chat_id() -> str:
-    return os.environ.get("TELEGRAM_CHAT_ID", TELEGRAM_CHAT_ID)
+    return os.environ.get("TELEGRAM_CHAT_ID", "")
 
 
 def _post_html(text: str) -> bool:
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{_get_token()}/sendMessage"
     try:
         resp = requests.post(url, json={
             "chat_id": _get_chat_id(),
@@ -37,7 +39,7 @@ def send_job(job: Job) -> bool:
         f'🔗 <a href="{job.url}">Відкрити вакансію</a>'
     )
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{_get_token()}/sendMessage"
     try:
         resp = requests.post(url, json={
             "chat_id": _get_chat_id(),
