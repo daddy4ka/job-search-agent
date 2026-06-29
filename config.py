@@ -39,6 +39,7 @@ SOURCES = [
     "autodoc",
     "whitebit",
     "ideals",
+    "genesis",
     # UA job boards
     "dou",
     "djinni",
