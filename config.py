@@ -40,6 +40,7 @@ SOURCES = [
     "whitebit",
     "ideals",
     "genesis",
+    "uklon",
     # UA job boards
     "dou",
     "djinni",
