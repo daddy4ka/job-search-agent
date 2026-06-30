@@ -1155,3 +1155,35 @@ def scrape_griddynamics() -> list[Job]:
 
 def scrape_genesis() -> list[Job]:
     return _scrape_breezy("gen-tech", "Genesis", "Genesis")
+
+
+def scrape_uklon() -> list[Job]:
+    jobs = []
+    try:
+        base = "https://careers.uklon.net"
+        resp = requests.get(f"{base}/vacancies-ua", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        pattern = (
+            r'📍([^<]+)</span></span></p>'
+            r'<p[^>]+w-heading[^>]+><span[^>]+><span[^>]+>([^<]+)</span>'
+            r'.*?href="(/ua-[^"]+)"'
+        )
+        for m in re.finditer(pattern, resp.text, re.DOTALL):
+            title = m.group(2).strip()
+            if not _title_match(title):
+                continue
+            loc_raw = m.group(1).replace('&nbsp;', ' ')
+            loc_part = re.split(r'[‍]?💎', loc_raw)[0].replace('📍', '').strip()
+            url_path = m.group(3)
+            jobs.append(Job(
+                id=_make_id("uklon", url_path),
+                title=title,
+                company="Uklon",
+                url=base + url_path,
+                description="",
+                source="Uklon",
+                location=loc_part,
+            ))
+    except Exception as e:
+        print(f"[Uklon] Error: {e}")
+    return jobs
