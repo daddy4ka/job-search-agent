@@ -75,6 +75,7 @@ def run():
 
     all_jobs = []
     source_counts = defaultdict(int)
+    job_source_to_key = {}
 
     for source in SOURCES:
         scraper = SCRAPERS.get(source)
@@ -85,8 +86,9 @@ def run():
             jobs = scraper()
             print(f"  -> {len(jobs)} jobs found")
             all_jobs.extend(jobs)
+            source_counts[source] = len(jobs)
             for job in jobs:
-                source_counts[job.source] += 1
+                job_source_to_key[job.source] = source
         except Exception as e:
             print(f"  -> Error: {e}")
 
@@ -98,7 +100,7 @@ def run():
     new_counts = defaultdict(int)
     for job in new_jobs:
         mark_seen(job)
-        new_counts[job.source] += 1
+        new_counts[job_source_to_key.get(job.source, job.source)] += 1
         send_job(job)
 
     send_summary(dict(source_counts), dict(new_counts), started_at, SOURCES)
