@@ -101,7 +101,7 @@ def run():
         new_counts[job.source] += 1
         send_job(job)
 
-    send_summary(dict(source_counts), dict(new_counts), started_at)
+    send_summary(dict(source_counts), dict(new_counts), started_at, SOURCES)
     print(f"\nDone. Sent {len(new_jobs)} notifications.")
 
 
