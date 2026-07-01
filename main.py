@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from config import SOURCES
 from scrapers.dou import scrape as scrape_dou
 from scrapers.djinni import scrape as scrape_djinni
-from scrapers.telegram import scrape as scrape_telegram
 from scrapers.companies import (
     scrape_intellias, scrape_eleks, scrape_nix, scrape_epam, scrape_globallogic,
     scrape_playtika, scrape_softserve, scrape_luxoft, scrape_sigma, scrape_dataart, scrape_wix,
@@ -12,10 +11,9 @@ from scrapers.companies import (
     scrape_ajax, scrape_dxc, scrape_zone3000, scrape_nixsolutions, scrape_tieto, scrape_fractal, scrape_novadigital,
     scrape_temabit,
     scrape_evoplay, scrape_headway, scrape_griddynamics, scrape_avenga, scrape_betterme,
-    scrape_obrio, scrape_jooble, scrape_allstarsit, scrape_autodoc, scrape_whitebit, scrape_ideals,
+    scrape_obrio, scrape_allstarsit, scrape_autodoc, scrape_whitebit, scrape_ideals,
     scrape_genesis, scrape_uklon, scrape_macpaw,
 )
-from scrapers.boards import scrape_weworkremotely
 from tracker import filter_new, mark_seen
 from notifier import send_job, send_summary
 
@@ -53,7 +51,6 @@ SCRAPERS = {
     "avenga":         scrape_avenga,
     "betterme":       scrape_betterme,
     "obrio":          scrape_obrio,
-    "jooble":         scrape_jooble,
     "allstarsit":     scrape_allstarsit,
     "autodoc":        scrape_autodoc,
     "whitebit":       scrape_whitebit,
@@ -64,9 +61,6 @@ SCRAPERS = {
     # UA job boards
     "dou":            scrape_dou,
     "djinni":         scrape_djinni,
-    "telegram":       scrape_telegram,
-    # International
-    "weworkremotely": scrape_weworkremotely,
 }
 
 
