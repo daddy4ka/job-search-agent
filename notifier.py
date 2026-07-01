@@ -54,7 +54,7 @@ def send_job(job: Job) -> bool:
         return False
 
 
-def send_summary(source_counts, new_counts, started_at, all_sources=None) -> None:
+def send_summary(raw_counts, source_counts, new_counts, started_at, all_sources=None) -> None:
     total_scraped = sum(source_counts.values())
     total_new = sum(new_counts.values())
     finished_at = datetime.now(timezone.utc)
@@ -62,26 +62,31 @@ def send_summary(source_counts, new_counts, started_at, all_sources=None) -> Non
     duration_str = f"{duration_sec // 60}хв {duration_sec % 60}с"
     date_str = finished_at.strftime("%d.%m")
 
-    def _bar(new, total, width=9):
-        if total == 0 or new == 0:
-            return "░" * width
-        filled = max(1, round(new / total * width))
-        return "█" * filled + "░" * (width - filled)
+    NAME_W = 14
+    SEP = "─" * 34
 
-    NAME_W = 13
-    SEP = "─" * 32
-
-    all_src = {s: source_counts.get(s, 0) for s in (all_sources or source_counts.keys())}
+    sources = list(all_sources or source_counts.keys())
     rows = [
-        (src, cnt, new_counts.get(src, 0))
-        for src, cnt in sorted(all_src.items(), key=lambda x: -x[1])
+        (src, raw_counts.get(src, 0), source_counts.get(src, 0), new_counts.get(src, 0))
+        for src in sources
     ]
+    rows.sort(key=lambda x: -x[1])
 
     lines = [f"Job scan · {date_str} · {duration_str}", ""]
-    for src, total, new in rows:
+    lines.append(f"  {'':<{NAME_W}}{'всі':>5}{'ок':>4}{'нові':>5}")
+
+    broken = []
+    for src, raw, matched, new in rows:
         name = src[:NAME_W]
-        lines.append(f"{name:<{NAME_W}} {total:>3} {_bar(new, total)}  {new:>3}")
+        row = f"{name:<{NAME_W}}{raw:>5}{matched:>4}{new:>5}"
+        if raw == 0:
+            lines.append(f"🔴{row} 🔴")
+            broken.append(src)
+        else:
+            lines.append(f"  {row}")
 
     lines += ["", SEP, f"знайдено {total_scraped} · нових {total_new}"]
+    if broken:
+        lines.append(f"🔴 не працює: {', '.join(broken)}")
 
     _post_html("<pre>" + "\n".join(lines) + "</pre>")
