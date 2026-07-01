@@ -34,7 +34,6 @@ SOURCES = [
     "avenga",
     "betterme",
     "obrio",
-    "jooble",
     "allstarsit",
     "autodoc",
     "whitebit",
@@ -45,7 +44,4 @@ SOURCES = [
     # UA job boards
     "dou",
     "djinni",
-    "telegram",
-    # International remote boards
-    "weworkremotely",
 ]
