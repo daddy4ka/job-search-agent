@@ -74,7 +74,7 @@ def _title_match(title: str) -> bool:
     return any(kw in t for kw in TITLE_MUST_HAVE)
 
 
-def scrape() -> list:
+def scrape() -> tuple[list, int]:
     jobs = []
     seen_ids = set()
 
@@ -103,4 +103,4 @@ def scrape() -> list:
             print(f"[DOU] Error fetching {feed_url}: {e}")
 
     print(f"  [DOU] {len(jobs)} jobs after title filter")
-    return jobs
+    return jobs, len(seen_ids)
