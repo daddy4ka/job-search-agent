@@ -515,10 +515,19 @@ def scrape_fractal() -> list[Job]:
             page.wait_for_timeout(4000)
             content = page.content()
             browser.close()
+
+        lowered = content.lower()
+        blockers = [m for m in ["just a moment", "attention required", "cf-browser-verification",
+                                 "checking your browser", "captcha", "cloudflare", "access denied"]
+                    if m in lowered]
+        print(f"[Fractal Partners] DEBUG html_len={len(content)} block_markers={blockers}")
+
         base = "https://career.fractal.partners"
         soup = BeautifulSoup(content, "html.parser")
+        cards = soup.select("a.job-card")
+        print(f"[Fractal Partners] DEBUG job-card elements: {len(cards)}")
         seen = set()
-        for a in soup.select("a.job-card"):
+        for a in cards:
             href = a.get("href", "")
             if not href or href in seen:
                 continue
