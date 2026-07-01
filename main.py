@@ -69,6 +69,7 @@ def run():
     print(f"=== Job Search Agent starting at {started_at.strftime('%Y-%m-%d %H:%M UTC')} ===")
 
     all_jobs = []
+    source_raw_counts = defaultdict(int)
     source_counts = defaultdict(int)
     job_source_to_key = {}
 
@@ -78,9 +79,10 @@ def run():
             continue
         print(f"[Scraper] {source}...")
         try:
-            jobs = scraper()
-            print(f"  -> {len(jobs)} jobs found")
+            jobs, raw_total = scraper()
+            print(f"  -> {raw_total} total, {len(jobs)} matched")
             all_jobs.extend(jobs)
+            source_raw_counts[source] = raw_total
             source_counts[source] = len(jobs)
             for job in jobs:
                 job_source_to_key[job.source] = source
@@ -98,7 +100,7 @@ def run():
         new_counts[job_source_to_key.get(job.source, job.source)] += 1
         send_job(job)
 
-    send_summary(dict(source_counts), dict(new_counts), started_at, SOURCES)
+    send_summary(dict(source_raw_counts), dict(source_counts), dict(new_counts), started_at, SOURCES)
     print(f"\nDone. Sent {len(new_jobs)} notifications.")
 
 
