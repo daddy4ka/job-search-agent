@@ -54,7 +54,7 @@ def send_job(job: Job) -> bool:
         return False
 
 
-def send_summary(source_counts, new_counts, started_at) -> None:
+def send_summary(source_counts, new_counts, started_at, all_sources=None) -> None:
     total_scraped = sum(source_counts.values())
     total_new = sum(new_counts.values())
     finished_at = datetime.now(timezone.utc)
@@ -74,8 +74,9 @@ def send_summary(source_counts, new_counts, started_at) -> None:
     rows = [
         (src, cnt, new_counts.get(src, 0))
         for src, cnt in sorted(source_counts.items(), key=lambda x: -x[1])
-        if new_counts.get(src, 0) > 0
     ]
+
+    zero_sources = [s for s in (all_sources or []) if source_counts.get(s, 0) == 0]
 
     lines = [f"Job scan · {date_str} · {duration_str}", ""]
     for src, total, new in rows:
@@ -83,5 +84,8 @@ def send_summary(source_counts, new_counts, started_at) -> None:
         lines.append(f"{name:<{NAME_W}} {total:>3} {_bar(new, total)}  {new:>3}")
 
     lines += ["", SEP, f"знайдено {total_scraped} · нових {total_new}"]
+
+    if zero_sources:
+        lines.append(f"нуль: {', '.join(zero_sources)}")
 
     _post_html("<pre>" + "\n".join(lines) + "</pre>")
