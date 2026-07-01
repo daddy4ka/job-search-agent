@@ -231,7 +231,41 @@ def scrape_ciklum() -> list[Job]:
     return jobs
 
 def scrape_intellias() -> list[Job]:
-    return _scrape_lever("intellias", "Intellias", "Intellias")
+    jobs = []
+    try:
+        base = "https://career.intellias.com"
+        api_headers = {**HEADERS, "Accept": "application/json"}
+        page = 1
+        total_pages = 1
+        while page <= total_pages:
+            resp = requests.get(
+                f"{base}/wp-json/wp/v2/vacancy",
+                headers=api_headers,
+                params={"per_page": 100, "page": page, "_fields": "link,title,class_list"},
+                timeout=15,
+            )
+            resp.raise_for_status()
+            total_pages = int(resp.headers.get("X-WP-TotalPages", 1))
+            for item in resp.json():
+                title = item.get("title", {}).get("rendered", "")
+                if not _title_match(title):
+                    continue
+                job_url = item.get("link", "")
+                locs = [c[len("location-"):] for c in item.get("class_list", []) if c.startswith("location-")]
+                location = ", ".join(l.replace("-", " ").title() for l in locs)
+                jobs.append(Job(
+                    id=_make_id("intellias", job_url),
+                    title=title,
+                    company="Intellias",
+                    url=job_url,
+                    description="",
+                    source="Intellias",
+                    location=location,
+                ))
+            page += 1
+    except Exception as e:
+        print(f"[Intellias] Error: {e}")
+    return jobs
 
 def scrape_nix() -> list[Job]:
     return _scrape_greenhouse("nix", "N-iX", "N-iX")
