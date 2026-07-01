@@ -34,13 +34,16 @@ def _sr_location(loc: dict) -> str:
 
 # ── Lever public API ──────────────────────────────────────────────────────────
 
-def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> list[Job]:
+def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         url = f"https://api.lever.co/v0/postings/{company_slug}?mode=json"
         resp = requests.get(url, headers=HEADERS, timeout=15)
         resp.raise_for_status()
-        for item in resp.json():
+        items = resp.json()
+        total_raw = len(items)
+        for item in items:
             title = item.get("text", "")
             if not _title_match(title):
                 continue
@@ -59,18 +62,21 @@ def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> li
             ))
     except Exception as e:
         print(f"[{source_label}] Lever API error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
 # ── Greenhouse public API ─────────────────────────────────────────────────────
 
-def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) -> list[Job]:
+def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         url = f"https://boards-api.greenhouse.io/v1/boards/{company_slug}/jobs?content=true"
         resp = requests.get(url, headers=HEADERS, timeout=15)
         resp.raise_for_status()
-        for item in resp.json().get("jobs", []):
+        items = resp.json().get("jobs", [])
+        total_raw = len(items)
+        for item in items:
             title = item.get("title", "")
             if not _title_match(title):
                 continue
@@ -88,7 +94,7 @@ def _scrape_greenhouse(company_slug: str, company_name: str, source_label: str) 
             ))
     except Exception as e:
         print(f"[{source_label}] Greenhouse API error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
 # ── Ashby public GraphQL API ──────────────────────────────────────────────────
@@ -104,8 +110,9 @@ _ASHBY_QUERY = """query ApiJobBoardWithTeams($organizationHostedJobsPageName: St
   }
 }"""
 
-def _scrape_ashby(org_name: str, company_name: str, source_label: str) -> list[Job]:
+def _scrape_ashby(org_name: str, company_name: str, source_label: str) -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         api_headers = {**HEADERS, "Content-Type": "application/json", "Referer": "https://jobs.ashbyhq.com/"}
         payload = {
@@ -119,6 +126,7 @@ def _scrape_ashby(org_name: str, company_name: str, source_label: str) -> list[J
         )
         resp.raise_for_status()
         postings = resp.json().get("data", {}).get("jobBoard", {}).get("jobPostings", [])
+        total_raw = len(postings)
         slug = org_name.replace(" ", "%20")
         for j in postings:
             title = j.get("title", "")
@@ -139,17 +147,20 @@ def _scrape_ashby(org_name: str, company_name: str, source_label: str) -> list[J
             ))
     except Exception as e:
         print(f"[{source_label}] Ashby API error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
 # ── Breezy HR public API ──────────────────────────────────────────────────────
 
-def _scrape_breezy(slug: str, company: str, source: str) -> list[Job]:
+def _scrape_breezy(slug: str, company: str, source: str) -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         resp = requests.get(f"https://{slug}.breezy.hr/json", headers=HEADERS, timeout=15)
         resp.raise_for_status()
-        for item in resp.json():
+        items = resp.json()
+        total_raw = len(items)
+        for item in items:
             title = item.get("name", "")
             if not _title_match(title):
                 continue
@@ -177,12 +188,12 @@ def _scrape_breezy(slug: str, company: str, source: str) -> list[Job]:
             ))
     except Exception as e:
         print(f"[{source}] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
 # ── UA Outsourcers ────────────────────────────────────────────────────────────
 
-def scrape_ciklum() -> list[Job]:
+def scrape_ciklum() -> tuple[list[Job], int]:
     jobs = []
     seen = set()
     try:
@@ -228,10 +239,11 @@ def scrape_ciklum() -> list[Job]:
             offset += 25
     except Exception as e:
         print(f"[Ciklum] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
-def scrape_intellias() -> list[Job]:
+def scrape_intellias() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         base = "https://career.intellias.com"
         api_headers = {**HEADERS, "Accept": "application/json"}
@@ -246,7 +258,9 @@ def scrape_intellias() -> list[Job]:
             )
             resp.raise_for_status()
             total_pages = int(resp.headers.get("X-WP-TotalPages", 1))
-            for item in resp.json():
+            items = resp.json()
+            total_raw += len(items)
+            for item in items:
                 title = item.get("title", {}).get("rendered", "")
                 if not _title_match(title):
                     continue
@@ -265,15 +279,15 @@ def scrape_intellias() -> list[Job]:
             page += 1
     except Exception as e:
         print(f"[Intellias] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
-def scrape_nix() -> list[Job]:
+def scrape_nix() -> tuple[list[Job], int]:
     return _scrape_greenhouse("nix", "N-iX", "N-iX")
 
-def scrape_eleks() -> list[Job]:
+def scrape_eleks() -> tuple[list[Job], int]:
     return _scrape_lever("eleks", "ELEKS", "ELEKS")
 
-def scrape_softserve() -> list[Job]:
+def scrape_softserve() -> tuple[list[Job], int]:
     jobs = []
     seen = set()
     try:
@@ -291,13 +305,13 @@ def scrape_softserve() -> list[Job]:
             data = resp.json()
             vacancies = data.get("data", {}).get("vacancies", [])
             for v in vacancies:
-                title = v.get("name", "")
-                if not _title_match(title):
-                    continue
                 slug = v.get("urlSegment", "")
                 if slug in seen:
                     continue
                 seen.add(slug)
+                title = v.get("name", "")
+                if not _title_match(title):
+                    continue
                 job_url = f"{base}/en-us/vacancies/{slug}" if slug else base
                 jobs.append(Job(
                     id=_make_id("softserve", job_url),
@@ -314,9 +328,9 @@ def scrape_softserve() -> list[Job]:
             page += 1
     except Exception as e:
         print(f"[SoftServe] API error: {e}")
-    return jobs
+    return jobs, len(seen)
 
-def scrape_dataart() -> list[Job]:
+def scrape_dataart() -> tuple[list[Job], int]:
     jobs = []
     try:
         base = "https://www.dataart.team"
@@ -354,12 +368,12 @@ def scrape_dataart() -> list[Job]:
                     break
     except Exception as e:
         print(f"[DataArt] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
-def scrape_playtika() -> list[Job]:
+def scrape_playtika() -> tuple[list[Job], int]:
     return _scrape_greenhouse("playtikaltd", "Playtika", "Playtika")
 
-def scrape_wix() -> list[Job]:
+def scrape_wix() -> tuple[list[Job], int]:
     jobs = []
     try:
         url = "https://api.smartrecruiters.com/v1/companies/Wix2/postings?limit=200"
@@ -386,26 +400,26 @@ def scrape_wix() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Wix] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_superhuman() -> list[Job]:
+def scrape_superhuman() -> tuple[list[Job], int]:
     return _scrape_ashby("Superhuman Platform Inc", "Superhuman", "Superhuman")
 
 
-def scrape_skelar() -> list[Job]:
+def scrape_skelar() -> tuple[list[Job], int]:
     return _scrape_ashby("SKELAR", "SKELAR", "SKELAR")
 
 
-def scrape_gr8tech() -> list[Job]:
+def scrape_gr8tech() -> tuple[list[Job], int]:
     return _scrape_greenhouse("gr8tech", "GR8 Tech", "GR8 Tech")
 
 
-def scrape_ajax() -> list[Job]:
+def scrape_ajax() -> tuple[list[Job], int]:
     return _scrape_lever("ajax", "Ajax Systems", "Ajax")
 
 
-def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str, keywords: list[str]) -> list[Job]:
+def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str, keywords: list[str]) -> tuple[list[Job], int]:
     jobs = []
     seen = set()
     try:
@@ -425,10 +439,10 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
                     path = j.get("externalPath", "")
                     if not path or path in seen:
                         continue
+                    seen.add(path)
                     title = j.get("title", "")
                     if not _title_match(title):
                         continue
-                    seen.add(path)
                     jobs.append(Job(
                         id=_make_id(source_label, path),
                         title=title,
@@ -443,17 +457,19 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
                     break
     except Exception as e:
         print(f"[{source_label}] Workday error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_temabit() -> list[Job]:
+def scrape_temabit() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         from bs4 import BeautifulSoup
         resp = requests.get("https://careers.temabit.com/job-sitemap.xml", headers=HEADERS, timeout=15)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "xml")
         urls = [loc.text for loc in soup.find_all("loc") if "/job/" in loc.text]
+        total_raw = len(urls)
         for url in urls:
             slug = url.rstrip("/").split("/")[-1]
             title = slug.replace("-", " ").title()
@@ -469,11 +485,12 @@ def scrape_temabit() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Temabit] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_novadigital() -> list[Job]:
+def scrape_novadigital() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         api_headers = {**HEADERS, "Accept": "application/json", "Referer": "https://novadigital.com/"}
         resp = requests.get(
@@ -481,7 +498,9 @@ def scrape_novadigital() -> list[Job]:
             headers=api_headers, timeout=15,
         )
         resp.raise_for_status()
-        for j in resp.json():
+        items = resp.json()
+        total_raw = len(items)
+        for j in items:
             title = j.get("title", "")
             if not _title_match(title):
                 continue
@@ -495,10 +514,10 @@ def scrape_novadigital() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Nova Digital] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_fractal() -> list[Job]:
+def scrape_fractal() -> tuple[list[Job], int]:
     jobs = []
     try:
         from playwright.sync_api import sync_playwright
@@ -548,10 +567,10 @@ def scrape_fractal() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Fractal Partners] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_tieto() -> list[Job]:
+def scrape_tieto() -> tuple[list[Job], int]:
     jobs = []
     try:
         from bs4 import BeautifulSoup
@@ -585,10 +604,10 @@ def scrape_tieto() -> list[Job]:
                 ))
     except Exception as e:
         print(f"[TietoEVRY] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_nixsolutions() -> list[Job]:
+def scrape_nixsolutions() -> tuple[list[Job], int]:
     jobs = []
     try:
         from bs4 import BeautifulSoup
@@ -621,16 +640,19 @@ def scrape_nixsolutions() -> list[Job]:
             ))
     except Exception as e:
         print(f"[NIX Solutions] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_zone3000() -> list[Job]:
+def scrape_zone3000() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         api_headers = {**HEADERS, "Referer": "https://zone3000.net/", "Accept": "application/json"}
         resp = requests.get("https://zone3000.net/api/vacancies", headers=api_headers, timeout=15)
         resp.raise_for_status()
-        for j in resp.json():
+        items = resp.json()
+        total_raw = len(items)
+        for j in items:
             title = j.get("title", "")
             if not _title_match(title):
                 continue
@@ -648,32 +670,32 @@ def scrape_zone3000() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Zone3000] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_dxc() -> list[Job]:
+def scrape_dxc() -> tuple[list[Job], int]:
     return _scrape_workday(
         tenant="dxctechnology", site="dxcjobs", company_name="DXC Technology", source_label="DXC",
         keywords=["analyst", "analytics", "bi lead", "head of data"],
     )
 
 
-def scrape_squad() -> list[Job]:
+def scrape_squad() -> tuple[list[Job], int]:
     jobs = []
+    seen = set()
     try:
         api_headers = {**HEADERS, "Referer": "https://squad.tech/careers", "Accept": "application/json"}
         resp = requests.get("https://squad.tech/api/v1/vacancies?page=0&pageLimit=200", headers=api_headers, timeout=15)
         resp.raise_for_status()
         data = resp.json()
-        seen = set()
         for j in data.get("vacancies", []):
-            title = j.get("title", "")
-            if not _title_match(title):
-                continue
             slug = j.get("humanReadableId", "")
             if slug in seen:
                 continue
             seen.add(slug)
+            title = j.get("title", "")
+            if not _title_match(title):
+                continue
             offices = j.get("offices", [])
             location = offices[0].get("name", "") if offices else j.get("country", "")
             jobs.append(Job(
@@ -687,16 +709,19 @@ def scrape_squad() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Squad] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_headway() -> list[Job]:
+def scrape_headway() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         api_headers = {**HEADERS, "Referer": "https://careers.headway.inc/"}
         resp = requests.get("https://careers.headway.inc/jobs.json", headers=api_headers, timeout=15)
         resp.raise_for_status()
-        for j in resp.json().get("items", []):
+        items = resp.json().get("items", [])
+        total_raw = len(items)
+        for j in items:
             title = j.get("title", "")
             if not _title_match(title):
                 continue
@@ -718,16 +743,19 @@ def scrape_headway() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Headway] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_evoplay() -> list[Job]:
+def scrape_evoplay() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         api_headers = {**HEADERS, "Referer": "https://evoplay.com.ua/"}
         resp = requests.get("https://app.catsone.com/portal?id=42364", headers=api_headers, timeout=15)
         resp.raise_for_status()
-        for j in resp.json().get("jobs", []):
+        items = resp.json().get("jobs", [])
+        total_raw = len(items)
+        for j in items:
             title = j.get("title", "")
             if not _title_match(title):
                 continue
@@ -744,10 +772,10 @@ def scrape_evoplay() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Evoplay] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_globallogic() -> list[Job]:
+def scrape_globallogic() -> tuple[list[Job], int]:
     import re as _re
     import time as _time
     from bs4 import BeautifulSoup
@@ -810,10 +838,10 @@ def scrape_globallogic() -> list[Job]:
             _time.sleep(0.3)
     except Exception as e:
         print(f"[GlobalLogic] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_epam() -> list[Job]:
+def scrape_epam() -> tuple[list[Job], int]:
     jobs = []
     try:
         base = "https://careers.epam.com"
@@ -838,10 +866,10 @@ def scrape_epam() -> list[Job]:
                     uid = j.get("uid") or j.get("_key", "")
                     if not uid or uid in seen:
                         continue
+                    seen.add(uid)
                     title = j.get("name", "")
                     if not _title_match(title):
                         continue
-                    seen.add(uid)
                     country = j.get("country", [{}])[0].get("name", "") if j.get("country") else ""
                     city = j.get("city", [{}])[0].get("name", "") if j.get("city") else ""
                     seo_url = j.get("seo", {}).get("url", "")
@@ -860,12 +888,12 @@ def scrape_epam() -> list[Job]:
                     break
     except Exception as e:
         print(f"[EPAM] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
-def scrape_lohika() -> list[Job]:
-    return []  # no public API found
+def scrape_lohika() -> tuple[list[Job], int]:
+    return [], 0  # no public API found
 
-def scrape_sigma() -> list[Job]:
+def scrape_sigma() -> tuple[list[Job], int]:
     jobs = []
     try:
         from bs4 import BeautifulSoup
@@ -911,10 +939,10 @@ def scrape_sigma() -> list[Job]:
             _parse_page(html)
     except Exception as e:
         print(f"[Sigma] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_luxoft() -> list[Job]:
+def scrape_luxoft() -> tuple[list[Job], int]:
     jobs = []
     try:
         base = "https://career.luxoft.com"
@@ -932,13 +960,13 @@ def scrape_luxoft() -> list[Job]:
             raw = resp.json()
             vacancies = raw if isinstance(raw, list) else raw.get("data", [])
             for v in vacancies:
-                title = v.get("title", "")
-                if not _title_match(title):
-                    continue
                 vr_key = v.get("vrPkey", "") or v.get("slug", "")
                 if vr_key in seen_keys:
                     continue
                 seen_keys.add(vr_key)
+                title = v.get("title", "")
+                if not _title_match(title):
+                    continue
                 slug = v.get("slug", "")
                 job_url = f"{base}/jobs/{slug}" if slug else base
                 location = ", ".join(filter(None, [v.get("city", ""), v.get("country", "")]))
@@ -953,11 +981,12 @@ def scrape_luxoft() -> list[Job]:
                 ))
     except Exception as e:
         print(f"[Luxoft] Error: {e}")
-    return jobs
+    return jobs, len(seen_keys)
 
 
-def scrape_autodoc() -> list[Job]:
+def scrape_autodoc() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         offset = 0
         while True:
@@ -970,6 +999,7 @@ def scrape_autodoc() -> list[Job]:
             items = data.get("content", [])
             if not items:
                 break
+            total_raw += len(items)
             for j in items:
                 title = j.get("name", "")
                 if not _title_match(title):
@@ -991,10 +1021,10 @@ def scrape_autodoc() -> list[Job]:
                 break
     except Exception as e:
         print(f"[Autodoc] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_allstarsit() -> list[Job]:
+def scrape_allstarsit() -> tuple[list[Job], int]:
     jobs = []
     try:
         from bs4 import BeautifulSoup
@@ -1029,7 +1059,7 @@ def scrape_allstarsit() -> list[Job]:
                 ))
     except Exception as e:
         print(f"[AllStarsIT] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
 def scrape_jooble() -> list[Job]:
@@ -1065,19 +1095,22 @@ def scrape_jooble() -> list[Job]:
     return jobs
 
 
-def scrape_obrio() -> list[Job]:
+def scrape_obrio() -> tuple[list[Job], int]:
     return _scrape_ashby("OBRIO", "OBRIO", "OBRIO")
 
-def scrape_ideals() -> list[Job]:
+def scrape_ideals() -> tuple[list[Job], int]:
     return _scrape_ashby("ideals", "iDeals", "iDeals")
 
 
-def scrape_betterme() -> list[Job]:
+def scrape_betterme() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         resp = requests.get("https://betterme.breezy.hr/json", headers=HEADERS, timeout=15)
         resp.raise_for_status()
-        for j in resp.json():
+        items = resp.json()
+        total_raw = len(items)
+        for j in items:
             title = j.get("name", "")
             if not _title_match(title):
                 continue
@@ -1095,10 +1128,10 @@ def scrape_betterme() -> list[Job]:
             ))
     except Exception as e:
         print(f"[BetterMe] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_avenga() -> list[Job]:
+def scrape_avenga() -> tuple[list[Job], int]:
     jobs = []
     try:
         from bs4 import BeautifulSoup
@@ -1128,11 +1161,12 @@ def scrape_avenga() -> list[Job]:
                 ))
     except Exception as e:
         print(f"[Avenga] Error: {e}")
-    return jobs
+    return jobs, len(seen)
 
 
-def scrape_whitebit() -> list[Job]:
+def scrape_whitebit() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         base = "https://whitebit.hurma.work"
         headers = {**HEADERS, "Accept": "application/json"}
@@ -1142,6 +1176,7 @@ def scrape_whitebit() -> list[Job]:
             resp.raise_for_status()
             result = resp.json().get("result", {})
             items = result.get("data", [])
+            total_raw += len(items)
             for v in items:
                 title = v.get("name", "")
                 if not _title_match(title):
@@ -1162,18 +1197,21 @@ def scrape_whitebit() -> list[Job]:
             page += 1
     except Exception as e:
         print(f"[WhiteBit] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_griddynamics() -> list[Job]:
+def scrape_griddynamics() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         from bs4 import BeautifulSoup
         base = "https://www.griddynamics.com"
         resp = requests.get(f"{base}/careers/discover-openings", headers=HEADERS, timeout=15)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
-        for a in soup.select("a.job-row[href*='/careers/vacancy/']"):
+        cards = soup.select("a.job-row[href*='/careers/vacancy/']")
+        total_raw = len(cards)
+        for a in cards:
             title_el = a.select_one(".job-title")
             if not title_el:
                 continue
@@ -1194,15 +1232,16 @@ def scrape_griddynamics() -> list[Job]:
             ))
     except Exception as e:
         print(f"[GridDynamics] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_genesis() -> list[Job]:
+def scrape_genesis() -> tuple[list[Job], int]:
     return _scrape_breezy("gen-tech", "Genesis", "Genesis")
 
 
-def scrape_uklon() -> list[Job]:
+def scrape_uklon() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         base = "https://careers.uklon.net"
         resp = requests.get(f"{base}/vacancies-ua", headers=HEADERS, timeout=15)
@@ -1213,6 +1252,7 @@ def scrape_uklon() -> list[Job]:
             r'.*?href="(/ua-[^"]+)"'
         )
         for m in re.finditer(pattern, resp.text, re.DOTALL):
+            total_raw += 1
             title = m.group(2).strip()
             if not _title_match(title):
                 continue
@@ -1230,11 +1270,12 @@ def scrape_uklon() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Uklon] Error: {e}")
-    return jobs
+    return jobs, total_raw
 
 
-def scrape_macpaw() -> list[Job]:
+def scrape_macpaw() -> tuple[list[Job], int]:
     jobs = []
+    total_raw = 0
     try:
         base = "https://macpaw.com"
         resp = requests.get(f"{base}/careers-all", headers=HEADERS, timeout=15)
@@ -1259,6 +1300,7 @@ def scrape_macpaw() -> list[Job]:
                             break
                 positions = json.loads(s[start:end + 1])
                 break
+        total_raw = len(positions)
         for p in positions:
             title = p.get("title", "")
             if not _title_match(title):
@@ -1275,4 +1317,4 @@ def scrape_macpaw() -> list[Job]:
             ))
     except Exception as e:
         print(f"[MacPaw] Error: {e}")
-    return jobs
+    return jobs, total_raw
