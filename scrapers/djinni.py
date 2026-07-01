@@ -12,7 +12,7 @@ DJINNI_FEEDS = [
 ]
 
 
-def scrape() -> list:
+def scrape() -> tuple[list, int]:
     jobs = []
     seen_ids = set()
 
@@ -41,4 +41,4 @@ def scrape() -> list:
             print(f"[Djinni] Error fetching {feed_url}: {e}")
 
     print(f"  [Djinni] {len(jobs)} jobs after title filter")
-    return jobs
+    return jobs, len(seen_ids)
