@@ -41,6 +41,7 @@ SOURCES = [
     "ideals",
     "genesis",
     "uklon",
+    "macpaw",
     # UA job boards
     "dou",
     "djinni",
