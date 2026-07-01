@@ -1,5 +1,6 @@
 """Scrapers for company career pages using Lever/Greenhouse public APIs."""
 import hashlib
+import json
 import re
 import requests
 from scrapers.dou import Job, _title_match, TITLE_MUST_HAVE
@@ -1186,4 +1187,49 @@ def scrape_uklon() -> list[Job]:
             ))
     except Exception as e:
         print(f"[Uklon] Error: {e}")
+    return jobs
+
+
+def scrape_macpaw() -> list[Job]:
+    jobs = []
+    try:
+        base = "https://macpaw.com"
+        resp = requests.get(f"{base}/careers-all", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        positions = []
+        for m in re.finditer(r'self\.__next_f\.push\(\[1,(".*?")\]\)', resp.text):
+            try:
+                s = json.loads(m.group(1))
+            except Exception:
+                continue
+            if isinstance(s, str) and '"positions":[' in s:
+                start = s.index('"positions":[') + len('"positions":')
+                depth = 0
+                end = start
+                for i in range(start, len(s)):
+                    if s[i] == '[':
+                        depth += 1
+                    elif s[i] == ']':
+                        depth -= 1
+                        if depth == 0:
+                            end = i
+                            break
+                positions = json.loads(s[start:end + 1])
+                break
+        for p in positions:
+            title = p.get("title", "")
+            if not _title_match(title):
+                continue
+            slug = p.get("slug", "")
+            jobs.append(Job(
+                id=_make_id("macpaw", slug),
+                title=title,
+                company="MacPaw",
+                url=f"{base}/careers/{slug}",
+                description="",
+                source="MacPaw",
+                location=p.get("location", ""),
+            ))
+    except Exception as e:
+        print(f"[MacPaw] Error: {e}")
     return jobs
