@@ -1,5 +1,6 @@
 import re
-import feedparser
+import requests
+from bs4 import BeautifulSoup
 from dataclasses import dataclass
 
 @dataclass
@@ -48,25 +49,28 @@ TITLE_MUST_HAVE = [
     "r&d team lead", "r&d lead", "research and development lead",
 ]
 
-# Each feed returns latest 25 jobs — combine keywords + categories for broader coverage
-DOU_FEEDS = [
-    # Keyword search
-    "https://jobs.dou.ua/vacancies/feeds/?search=analyst",
-    "https://jobs.dou.ua/vacancies/feeds/?search=analytics",
-    "https://jobs.dou.ua/vacancies/feeds/?search=head+of+data",
-    "https://jobs.dou.ua/vacancies/feeds/?search=head+of+analytics",
-    "https://jobs.dou.ua/vacancies/feeds/?search=bi+analyst",
-    "https://jobs.dou.ua/vacancies/feeds/?search=data+lead",
-    "https://jobs.dou.ua/vacancies/feeds/?search=bi+lead",
-    "https://jobs.dou.ua/vacancies/feeds/?search=data+manager",
-    "https://jobs.dou.ua/vacancies/feeds/?search=head+of+bi",
-    "https://jobs.dou.ua/vacancies/feeds/?search=analytics+manager",
-    "https://jobs.dou.ua/vacancies/feeds/?search=%D0%B0%D0%BD%D0%B0%D0%BB%D1%96%D1%82%D0%B8%D0%BA",
-    "https://jobs.dou.ua/vacancies/feeds/?search=%D0%B0%D0%BD%D0%B0%D0%BB%D1%96%D1%82%D0%B8%D0%BA%D0%B0",
-    # Category feeds
-    "https://jobs.dou.ua/vacancies/feeds/?category=Analytics+%2F+BI",
-    "https://jobs.dou.ua/vacancies/feeds/?category=Data+Science",
-    "https://jobs.dou.ua/vacancies/feeds/?category=Management",
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"}
+BASE = "https://jobs.dou.ua/vacancies/"
+MAX_BATCHES = 20  # safety cap on "load more" pages per search
+
+# HTML search + pagination captures far more than the RSS feeds (each RSS feed
+# is hard-capped at the latest 25 items regardless of how many actually match).
+DOU_SEARCHES = [
+    {"search": "analyst"},
+    {"search": "analytics"},
+    {"search": "head of data"},
+    {"search": "head of analytics"},
+    {"search": "bi analyst"},
+    {"search": "data lead"},
+    {"search": "bi lead"},
+    {"search": "data manager"},
+    {"search": "head of bi"},
+    {"search": "analytics manager"},
+    {"search": "аналітик"},
+    {"search": "аналітика"},
+    {"category": "Analytics / BI"},
+    {"category": "Data Science"},
+    {"category": "Management"},
 ]
 
 
@@ -75,47 +79,97 @@ def _title_match(title: str) -> bool:
     return any(kw in t for kw in TITLE_MUST_HAVE)
 
 
-def _parse_dou_title(raw_title: str, link: str) -> tuple[str, str, str]:
-    """DOU RSS titles are formatted as '{title} в {company}, {location}'."""
-    m = re.search(r'^(.+)\sв\s([^,]+)(?:,\s*(.+))?$', raw_title)
-    if m:
-        return m.group(1).strip(), m.group(2).strip(), (m.group(3) or "").strip()
-    slug_match = re.search(r'/companies/([^/]+)/', link)
-    company = slug_match.group(1).replace("-", " ").title() if slug_match else "DOU"
-    return raw_title, company, ""
+def _parse_items(html: str) -> list[dict]:
+    soup = BeautifulSoup(html, "html.parser")
+    items = []
+    for li in soup.select("li.l-vacancy"):
+        title_el = li.select_one("a.vt")
+        if not title_el:
+            continue
+        link = title_el.get("href", "").split("?")[0]
+        job_id_m = re.search(r'/vacancies/(\d+)/', link)
+        if not job_id_m:
+            continue
+        company_el = li.select_one("a.company")
+        loc_el = li.select_one("span.cities")
+        desc_el = li.select_one("div.sh-info")
+        items.append({
+            "id": job_id_m.group(1),
+            "title": title_el.get_text(strip=True),
+            "company": company_el.get_text(strip=True) if company_el else "DOU",
+            "location": loc_el.get_text(strip=True) if loc_el else "",
+            "description": desc_el.get_text(strip=True) if desc_el else "",
+            "link": link,
+        })
+    return items
+
+
+def _scrape_search(params: dict, session: requests.Session) -> list[dict]:
+    resp = session.get(BASE, params=params, headers=HEADERS, timeout=20)
+    resp.raise_for_status()
+    csrf = session.cookies.get("csrftoken", "")
+
+    all_items = _parse_items(resp.text)
+    seen_ids = {it["id"] for it in all_items}
+
+    xhr_headers = {
+        **HEADERS,
+        "X-Requested-With": "XMLHttpRequest",
+        "Referer": resp.url,
+        "X-CSRFToken": csrf,
+    }
+
+    for _ in range(MAX_BATCHES):
+        r = session.post(
+            f"{BASE}xhr-load/",
+            params=params,
+            data={"count": len(all_items)},
+            headers=xhr_headers,
+            timeout=20,
+        )
+        if r.status_code != 200:
+            break
+        try:
+            fragment = r.json().get("html", "")
+        except ValueError:
+            break
+        batch = _parse_items(fragment)
+        new_batch = [it for it in batch if it["id"] not in seen_ids]
+        if not new_batch:
+            break
+        for it in new_batch:
+            seen_ids.add(it["id"])
+            all_items.append(it)
+
+    return all_items
 
 
 def scrape() -> tuple[list, int]:
     jobs = []
     seen_ids = set()
+    session = requests.Session()
 
-    for feed_url in DOU_FEEDS:
+    for params in DOU_SEARCHES:
         try:
-            feed = feedparser.parse(feed_url)
-            for entry in feed.entries:
-                job_id = entry.get("id") or entry.get("link", "")
-                if job_id in seen_ids:
-                    continue
-                seen_ids.add(job_id)
-
-                raw_title = entry.get("title", "")
-                if not _title_match(raw_title):
-                    continue
-
-                link = entry.get("link", "")
-                title, company, location = _parse_dou_title(raw_title, link)
-
-                jobs.append(Job(
-                    id=f"dou_{job_id}",
-                    title=title,
-                    company=company,
-                    url=link,
-                    description=entry.get("summary", ""),
-                    source="DOU.ua",
-                    location=location,
-                ))
+            items = _scrape_search(params, session)
         except Exception as e:
-            print(f"[DOU] Error fetching {feed_url}: {e}")
+            print(f"[DOU] Error fetching {params}: {e}")
+            continue
+        for it in items:
+            if it["id"] in seen_ids:
+                continue
+            seen_ids.add(it["id"])
+            if not _title_match(it["title"]):
+                continue
+            jobs.append(Job(
+                id=f"dou_{it['id']}",
+                title=it["title"],
+                company=it["company"],
+                url=it["link"],
+                description=it["description"],
+                source="DOU.ua",
+                location=it["location"],
+            ))
 
     print(f"  [DOU] {len(jobs)} jobs after title filter")
     return jobs, len(seen_ids)
