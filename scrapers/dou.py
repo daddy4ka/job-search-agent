@@ -1,3 +1,4 @@
+import re
 import feedparser
 from dataclasses import dataclass
 
@@ -74,6 +75,16 @@ def _title_match(title: str) -> bool:
     return any(kw in t for kw in TITLE_MUST_HAVE)
 
 
+def _parse_dou_title(raw_title: str, link: str) -> tuple[str, str, str]:
+    """DOU RSS titles are formatted as '{title} в {company}, {location}'."""
+    m = re.search(r'^(.+)\sв\s([^,]+)(?:,\s*(.+))?$', raw_title)
+    if m:
+        return m.group(1).strip(), m.group(2).strip(), (m.group(3) or "").strip()
+    slug_match = re.search(r'/companies/([^/]+)/', link)
+    company = slug_match.group(1).replace("-", " ").title() if slug_match else "DOU"
+    return raw_title, company, ""
+
+
 def scrape() -> tuple[list, int]:
     jobs = []
     seen_ids = set()
@@ -87,17 +98,21 @@ def scrape() -> tuple[list, int]:
                     continue
                 seen_ids.add(job_id)
 
-                title = entry.get("title", "")
-                if not _title_match(title):
+                raw_title = entry.get("title", "")
+                if not _title_match(raw_title):
                     continue
+
+                link = entry.get("link", "")
+                title, company, location = _parse_dou_title(raw_title, link)
 
                 jobs.append(Job(
                     id=f"dou_{job_id}",
                     title=title,
-                    company=entry.get("author", "DOU"),
-                    url=entry.get("link", ""),
+                    company=company,
+                    url=link,
                     description=entry.get("summary", ""),
                     source="DOU.ua",
+                    location=location,
                 ))
         except Exception as e:
             print(f"[DOU] Error fetching {feed_url}: {e}")
