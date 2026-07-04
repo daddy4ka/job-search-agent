@@ -16,7 +16,7 @@ class Job:
 
 TITLE_MUST_HAVE = [
     # Generic
-    "analyst", "analytics",
+    "analyst", "analytics", "operations",
     # Head-level
     "head of data", "head of analytics", "head of bi", "head of business intelligence",
     "head of r&d", "head of research", "head of insight", "head of insights",
@@ -66,6 +66,7 @@ DOU_SEARCHES = [
     {"search": "data manager"},
     {"search": "head of bi"},
     {"search": "analytics manager"},
+    {"search": "operations"},
     {"search": "аналітик"},
     {"search": "аналітика"},
     {"category": "Analytics / BI"},
