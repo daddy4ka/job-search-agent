@@ -2,6 +2,7 @@
 import hashlib
 import json
 import re
+import time
 import requests
 from scrapers.dou import Job, _title_match, TITLE_MUST_HAVE
 
@@ -10,6 +11,36 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; JobSearchBot/1.0)"}
 
 def _make_id(source: str, url: str) -> str:
     return f"{source}_{hashlib.md5(url.encode()).hexdigest()[:12]}"
+
+
+def _get_json_with_retry(url: str, headers: dict, retries: int = 2, delay: float = 1.5, timeout: int = 15):
+    """GET + parse JSON, retrying on any failure (HTTP error, timeout, bad body)."""
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            resp.raise_for_status()
+            return resp.json()
+        except Exception:
+            if attempt < retries:
+                time.sleep(delay)
+                continue
+            raise
+
+
+def _post_json_with_retry(url: str, headers: dict, json_body: dict, retries: int = 2, delay: float = 1.5, timeout: int = 20):
+    """POST + parse JSON. Non-200 is a legitimate stop signal (not retried);
+    only a bad/empty body on a 200 response is retried."""
+    for attempt in range(retries + 1):
+        resp = requests.post(url, headers=headers, json=json_body, timeout=timeout)
+        if resp.status_code != 200:
+            return None
+        try:
+            return resp.json()
+        except ValueError:
+            if attempt < retries:
+                time.sleep(delay)
+                continue
+            raise
 
 
 _COUNTRY = {
@@ -429,10 +460,9 @@ def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str
         for kw in keywords:
             offset = 0
             while True:
-                resp = requests.post(url, headers=api_headers, json={"limit": 20, "offset": offset, "searchText": kw}, timeout=20)
-                if resp.status_code != 200:
+                data = _post_json_with_retry(url, api_headers, {"limit": 20, "offset": offset, "searchText": kw})
+                if data is None:
                     break
-                data = resp.json()
                 postings = data.get("jobPostings", [])
                 total = data.get("total", 0)
                 for j in postings:
@@ -751,9 +781,8 @@ def scrape_evoplay() -> tuple[list[Job], int]:
     total_raw = 0
     try:
         api_headers = {**HEADERS, "Referer": "https://evoplay.com.ua/"}
-        resp = requests.get("https://app.catsone.com/portal?id=42364", headers=api_headers, timeout=15)
-        resp.raise_for_status()
-        items = resp.json().get("jobs", [])
+        data = _get_json_with_retry("https://app.catsone.com/portal?id=42364", api_headers)
+        items = data.get("jobs", [])
         total_raw = len(items)
         for j in items:
             title = j.get("title", "")
