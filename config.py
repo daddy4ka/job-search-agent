@@ -41,6 +41,7 @@ SOURCES = [
     "genesis",
     "uklon",
     "macpaw",
+    "readdle",
     # UA job boards
     "dou",
     "djinni",
