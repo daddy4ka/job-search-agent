@@ -1347,3 +1347,38 @@ def scrape_macpaw() -> tuple[list[Job], int]:
     except Exception as e:
         print(f"[MacPaw] Error: {e}")
     return jobs, total_raw
+
+
+def scrape_readdle() -> tuple[list[Job], int]:
+    jobs = []
+    total_raw = 0
+    try:
+        from bs4 import BeautifulSoup
+        base = "https://readdle.com"
+        resp = requests.get(f"{base}/careers", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        cards = soup.select("div.vacancy-card")
+        total_raw = len(cards)
+        for c in cards:
+            pos_el = c.select_one("span.position")
+            a_el = c.select_one("a[href]")
+            if not pos_el or not a_el:
+                continue
+            title = pos_el.get_text(strip=True)
+            if not _title_match(title):
+                continue
+            href = a_el.get("href", "")
+            job_url = base + href if href.startswith("/") else href
+            jobs.append(Job(
+                id=_make_id("readdle", href),
+                title=title,
+                company="Readdle",
+                url=job_url,
+                description="",
+                source="Readdle",
+                location=c.get("data-location", ""),
+            ))
+    except Exception as e:
+        print(f"[Readdle] Error: {e}")
+    return jobs, total_raw
