@@ -12,7 +12,7 @@ from scrapers.companies import (
     scrape_temabit,
     scrape_evoplay, scrape_headway, scrape_griddynamics, scrape_avenga, scrape_betterme,
     scrape_obrio, scrape_allstarsit, scrape_autodoc, scrape_whitebit, scrape_ideals,
-    scrape_genesis, scrape_uklon, scrape_macpaw, scrape_readdle, scrape_upstars,
+    scrape_genesis, scrape_uklon, scrape_macpaw, scrape_readdle, scrape_upstars, scrape_dripify,
 )
 from tracker import filter_new, mark_seen
 from notifier import send_job, send_summary
@@ -60,6 +60,7 @@ SCRAPERS = {
     "macpaw":         scrape_macpaw,
     "readdle":        scrape_readdle,
     "upstars":        scrape_upstars,
+    "dripify":        scrape_dripify,
     # UA job boards
     "dou":            scrape_dou,
     "djinni":         scrape_djinni,
