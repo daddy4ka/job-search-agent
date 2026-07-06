@@ -1430,3 +1430,44 @@ def scrape_dripify() -> tuple[list[Job], int]:
 
 def scrape_pmgroup() -> tuple[list[Job], int]:
     return _scrape_teamtailor("https://talent.pm.group", "PM Group", "PM Group")
+
+
+def scrape_galaktica() -> tuple[list[Job], int]:
+    jobs = []
+    total_raw = 0
+    try:
+        from bs4 import BeautifulSoup
+        base = "https://www.galaktica.io"
+        seen = set()
+        for page in range(1, 15):
+            url = f"{base}/careers" if page == 1 else f"{base}/careers?05cb77c9_page={page}"
+            resp = requests.get(url, headers=HEADERS, timeout=15)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "html.parser")
+            cards = soup.select("a.card-career")
+            new_cards = [c for c in cards if c.get("href", "") not in seen]
+            if not new_cards:
+                break
+            for a in new_cards:
+                href = a.get("href", "")
+                seen.add(href)
+                title_el = a.select_one("h3")
+                if not title_el:
+                    continue
+                title = title_el.get_text(strip=True)
+                if not _title_match(title):
+                    continue
+                job_url = base + href if href.startswith("/") else href
+                jobs.append(Job(
+                    id=_make_id("galaktica", href),
+                    title=title,
+                    company="Galaktica",
+                    url=job_url,
+                    description="",
+                    source="Galaktica",
+                    location="",
+                ))
+        total_raw = len(seen)
+    except Exception as e:
+        print(f"[Galaktica] Error: {e}")
+    return jobs, total_raw
