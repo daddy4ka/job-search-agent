@@ -1382,3 +1382,38 @@ def scrape_readdle() -> tuple[list[Job], int]:
     except Exception as e:
         print(f"[Readdle] Error: {e}")
     return jobs, total_raw
+
+
+def scrape_upstars() -> tuple[list[Job], int]:
+    jobs = []
+    total_raw = 0
+    try:
+        resp = requests.get("https://career.upstars.com/jobs.json", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        items = resp.json().get("items", [])
+        total_raw = len(items)
+        for j in items:
+            title = j.get("title", "")
+            if not _title_match(title):
+                continue
+            jp = j.get("_jobposting", {})
+            loc_raw = jp.get("jobLocation", []) if isinstance(jp, dict) else []
+            if isinstance(loc_raw, list) and loc_raw:
+                addr = loc_raw[0].get("address", {})
+            elif isinstance(loc_raw, dict):
+                addr = loc_raw.get("address", {})
+            else:
+                addr = {}
+            location = ", ".join(filter(None, [addr.get("addressLocality", ""), addr.get("addressCountry", "")]))
+            jobs.append(Job(
+                id=_make_id("upstars", j.get("id", "")),
+                title=title,
+                company="Upstars",
+                url=j.get("url", "https://career.upstars.com/jobs"),
+                description="",
+                source="Upstars",
+                location=location,
+            ))
+    except Exception as e:
+        print(f"[Upstars] Error: {e}")
+    return jobs, total_raw
