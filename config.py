@@ -44,6 +44,7 @@ SOURCES = [
     "readdle",
     "upstars",
     "dripify",
+    "pmgroup",
     # UA job boards
     "dou",
     "djinni",
