@@ -1384,11 +1384,12 @@ def scrape_readdle() -> tuple[list[Job], int]:
     return jobs, total_raw
 
 
-def scrape_upstars() -> tuple[list[Job], int]:
+def _scrape_teamtailor(base_url: str, company_name: str, source_label: str) -> tuple[list[Job], int]:
+    """Teamtailor career sites expose all vacancies as a JSON Feed at /jobs.json."""
     jobs = []
     total_raw = 0
     try:
-        resp = requests.get("https://career.upstars.com/jobs.json", headers=HEADERS, timeout=15)
+        resp = requests.get(f"{base_url}/jobs.json", headers=HEADERS, timeout=15)
         resp.raise_for_status()
         items = resp.json().get("items", [])
         total_raw = len(items)
@@ -1406,14 +1407,22 @@ def scrape_upstars() -> tuple[list[Job], int]:
                 addr = {}
             location = ", ".join(filter(None, [addr.get("addressLocality", ""), addr.get("addressCountry", "")]))
             jobs.append(Job(
-                id=_make_id("upstars", j.get("id", "")),
+                id=_make_id(source_label, j.get("id", "")),
                 title=title,
-                company="Upstars",
-                url=j.get("url", "https://career.upstars.com/jobs"),
+                company=company_name,
+                url=j.get("url", f"{base_url}/jobs"),
                 description="",
-                source="Upstars",
+                source=source_label,
                 location=location,
             ))
     except Exception as e:
-        print(f"[Upstars] Error: {e}")
+        print(f"[{source_label}] Error: {e}")
     return jobs, total_raw
+
+
+def scrape_upstars() -> tuple[list[Job], int]:
+    return _scrape_teamtailor("https://career.upstars.com", "Upstars", "Upstars")
+
+
+def scrape_dripify() -> tuple[list[Job], int]:
+    return _scrape_teamtailor("https://career.dripify.com", "Dripify", "Dripify")
