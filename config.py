@@ -42,6 +42,7 @@ SOURCES = [
     "uklon",
     "macpaw",
     "readdle",
+    "upstars",
     # UA job boards
     "dou",
     "djinni",
