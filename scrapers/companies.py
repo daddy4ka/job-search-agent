@@ -1426,3 +1426,7 @@ def scrape_upstars() -> tuple[list[Job], int]:
 
 def scrape_dripify() -> tuple[list[Job], int]:
     return _scrape_teamtailor("https://career.dripify.com", "Dripify", "Dripify")
+
+
+def scrape_pmgroup() -> tuple[list[Job], int]:
+    return _scrape_teamtailor("https://talent.pm.group", "PM Group", "PM Group")
