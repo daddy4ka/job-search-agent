@@ -43,6 +43,7 @@ SOURCES = [
     "macpaw",
     "readdle",
     "upstars",
+    "dripify",
     # UA job boards
     "dou",
     "djinni",
