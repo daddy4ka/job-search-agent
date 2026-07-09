@@ -450,6 +450,10 @@ def scrape_ajax() -> tuple[list[Job], int]:
     return _scrape_lever("ajax", "Ajax Systems", "Ajax")
 
 
+def scrape_capitalcom() -> tuple[list[Job], int]:
+    return _scrape_lever("capital", "Capital.com", "Capital.com")
+
+
 def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str, keywords: list[str]) -> tuple[list[Job], int]:
     jobs = []
     seen = set()
