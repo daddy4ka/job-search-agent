@@ -46,6 +46,7 @@ SOURCES = [
     "dripify",
     "pmgroup",
     "galaktica",
+    "capitalcom",
     # UA job boards
     "dou",
     "djinni",
