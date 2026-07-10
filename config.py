@@ -47,6 +47,7 @@ SOURCES = [
     "pmgroup",
     "galaktica",
     "capitalcom",
+    "dataforest",
     # UA job boards
     "dou",
     "djinni",
