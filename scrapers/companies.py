@@ -1197,11 +1197,12 @@ def scrape_avenga() -> tuple[list[Job], int]:
     return jobs, len(seen)
 
 
-def scrape_whitebit() -> tuple[list[Job], int]:
+def _scrape_hurma(slug: str, company_name: str, source_label: str) -> tuple[list[Job], int]:
+    """Hurma-hosted career sites (hurma.work) expose vacancies via a paginated JSON API."""
     jobs = []
     total_raw = 0
     try:
-        base = "https://whitebit.hurma.work"
+        base = f"https://{slug}.hurma.work"
         headers = {**HEADERS, "Accept": "application/json"}
         page = 1
         while True:
@@ -1217,20 +1218,28 @@ def scrape_whitebit() -> tuple[list[Job], int]:
                 vid = str(v.get("id", ""))
                 job_url = f"{base}/public-vacancies/{vid}"
                 jobs.append(Job(
-                    id=_make_id("whitebit", vid),
+                    id=_make_id(source_label, vid),
                     title=title,
-                    company="WhiteBit",
+                    company=company_name,
                     url=job_url,
                     description="",
-                    source="WhiteBit",
+                    source=source_label,
                     location=v.get("residence", ""),
                 ))
             if page >= result.get("last_page", 1):
                 break
             page += 1
     except Exception as e:
-        print(f"[WhiteBit] Error: {e}")
+        print(f"[{source_label}] Error: {e}")
     return jobs, total_raw
+
+
+def scrape_whitebit() -> tuple[list[Job], int]:
+    return _scrape_hurma("whitebit", "WhiteBit", "WhiteBit")
+
+
+def scrape_dataforest() -> tuple[list[Job], int]:
+    return _scrape_hurma("dataforest", "Dataforest", "Dataforest")
 
 
 def scrape_griddynamics() -> tuple[list[Job], int]:
