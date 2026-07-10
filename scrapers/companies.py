@@ -1242,6 +1242,47 @@ def scrape_dataforest() -> tuple[list[Job], int]:
     return _scrape_hurma("dataforest", "Dataforest", "Dataforest")
 
 
+def scrape_boosta() -> tuple[list[Job], int]:
+    """Boosta's WordPress theme loads vacancies via admin-ajax.php (action=more_opportunity),
+    paginated 5 at a time regardless of the requested category."""
+    jobs = []
+    total_raw = 0
+    try:
+        url = "https://boosta.biz/wp-admin/admin-ajax.php"
+        pattern = re.compile(
+            r'<a href="([^"]+)" class="opportunity__name">([^<]+)</a>\s*'
+            r'<div class="opportunity__desc">([^<]*)</div>'
+        )
+        offset = 0
+        seen = set()
+        while True:
+            resp = requests.post(
+                url,
+                data={"action": "more_opportunity", "cat": "all", "offset": str(offset)},
+                headers=HEADERS, timeout=15,
+            )
+            resp.raise_for_status()
+            body = resp.text
+            items = pattern.findall(body)
+            new_items = [it for it in items if it[0] not in seen]
+            if not new_items:
+                break
+            for job_url, title, desc in new_items:
+                seen.add(job_url)
+                title = title.strip()
+                if not _title_match(title):
+                    continue
+                jobs.append(Job(
+                    id=_make_id("boosta", job_url), title=title, company="Boosta",
+                    url=job_url, description="", source="Boosta", location=desc.strip(),
+                ))
+            total_raw = len(seen)
+            offset += 5
+    except Exception as e:
+        print(f"[Boosta] Error: {e}")
+    return jobs, total_raw
+
+
 def scrape_griddynamics() -> tuple[list[Job], int]:
     jobs = []
     total_raw = 0
