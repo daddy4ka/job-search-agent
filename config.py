@@ -49,6 +49,7 @@ SOURCES = [
     "capitalcom",
     "dataforest",
     "boosta",
+    "amo",
     # UA job boards
     "dou",
     "djinni",
