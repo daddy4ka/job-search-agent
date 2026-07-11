@@ -65,11 +65,11 @@ def _sr_location(loc: dict) -> str:
 
 # ── Lever public API ──────────────────────────────────────────────────────────
 
-def _scrape_lever(company_slug: str, company_name: str, source_label: str) -> tuple[list[Job], int]:
+def _scrape_lever(company_slug: str, company_name: str, source_label: str, api_host: str = "api.lever.co") -> tuple[list[Job], int]:
     jobs = []
     total_raw = 0
     try:
-        url = f"https://api.lever.co/v0/postings/{company_slug}?mode=json"
+        url = f"https://{api_host}/v0/postings/{company_slug}?mode=json"
         resp = requests.get(url, headers=HEADERS, timeout=15)
         resp.raise_for_status()
         items = resp.json()
@@ -452,6 +452,10 @@ def scrape_ajax() -> tuple[list[Job], int]:
 
 def scrape_capitalcom() -> tuple[list[Job], int]:
     return _scrape_lever("capital", "Capital.com", "Capital.com")
+
+
+def scrape_amo() -> tuple[list[Job], int]:
+    return _scrape_lever("amo", "AMO", "AMO", api_host="api.eu.lever.co")
 
 
 def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str, keywords: list[str]) -> tuple[list[Job], int]:
