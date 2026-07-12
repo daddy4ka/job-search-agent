@@ -1,5 +1,6 @@
 """Scrapers for company career pages using Lever/Greenhouse public APIs."""
 import hashlib
+import html
 import json
 import re
 import time
@@ -456,6 +457,32 @@ def scrape_capitalcom() -> tuple[list[Job], int]:
 
 def scrape_amo() -> tuple[list[Job], int]:
     return _scrape_lever("amo", "AMO", "AMO", api_host="api.eu.lever.co")
+
+
+def scrape_gismart() -> tuple[list[Job], int]:
+    """Gismart's careers page is a single server-rendered WordPress page listing all vacancies."""
+    jobs = []
+    total_raw = 0
+    try:
+        resp = requests.get("https://gismart.com/careers/", headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        pattern = re.compile(
+            r'href="(https://gismart\.com/vacancy/[^"]+)">\s*<span class="props">([^<]*)</span>\s*<span>([^<]+)</span>',
+            re.S
+        )
+        items = pattern.findall(resp.text)
+        total_raw = len(items)
+        for job_url, location, title in items:
+            title = html.unescape(title.strip())
+            if not _title_match(title):
+                continue
+            jobs.append(Job(
+                id=_make_id("gismart", job_url), title=title, company="Gismart",
+                url=job_url, description="", source="Gismart", location=location.strip(),
+            ))
+    except Exception as e:
+        print(f"[Gismart] Error: {e}")
+    return jobs, total_raw
 
 
 def _scrape_workday(tenant: str, site: str, company_name: str, source_label: str, keywords: list[str]) -> tuple[list[Job], int]:
@@ -1273,7 +1300,7 @@ def scrape_boosta() -> tuple[list[Job], int]:
                 break
             for job_url, title, desc in new_items:
                 seen.add(job_url)
-                title = title.strip()
+                title = html.unescape(title.strip())
                 if not _title_match(title):
                     continue
                 jobs.append(Job(
