@@ -50,6 +50,7 @@ SOURCES = [
     "dataforest",
     "boosta",
     "amo",
+    "gismart",
     # UA job boards
     "dou",
     "djinni",
