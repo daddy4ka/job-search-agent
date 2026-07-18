@@ -25,7 +25,6 @@ SOURCES = [
     "zone3000",
     "nixsolutions",
     "tieto",
-    "fractal",
     "novadigital",
     "temabit",
     "evoplay",
