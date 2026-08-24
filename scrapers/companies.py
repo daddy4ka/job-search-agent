@@ -225,20 +225,24 @@ def _scrape_breezy(slug: str, company: str, source: str) -> tuple[list[Job], int
 
 # ── UA Outsourcers ────────────────────────────────────────────────────────────
 
-def scrape_ciklum() -> tuple[list[Job], int]:
+def _scrape_oracle_hcm(api_host: str, site_number: str, job_base: str, company_name: str,
+                        source_label: str, referer: str = "", page_size: int = 25) -> tuple[list[Job], int]:
+    """Oracle Fusion Recruiting Cloud (candidate experience) sites expose an unauthenticated
+    REST API for job requisitions, paginated via offset/limit."""
     jobs = []
     seen = set()
     try:
-        api = "https://ialmme.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions"
-        job_base = "https://explore-jobs.ciklum.com/en/sites/ciklum-career/job"
-        api_headers = {**HEADERS, "Referer": "https://explore-jobs.ciklum.com/", "Accept": "application/json"}
+        api = f"https://{api_host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions"
+        api_headers = {**HEADERS, "Accept": "application/json"}
+        if referer:
+            api_headers["Referer"] = referer
         offset = 0
         total = 9999
         while offset < total:
             params = {
                 "onlyData": "true",
                 "expand": "requisitionList.workLocation",
-                "finder": f"findReqs;siteNumber=CX_1001,facetsList=LOCATIONS;TITLES;CATEGORIES,limit=25,sortBy=POSTING_DATES_DESC,offset={offset}",
+                "finder": f"findReqs;siteNumber={site_number},facetsList=LOCATIONS;TITLES;CATEGORIES,limit={page_size},sortBy=POSTING_DATES_DESC,offset={offset}",
             }
             resp = requests.get(api, headers=api_headers, params=params, timeout=20)
             if resp.status_code != 200 or not resp.text.strip():
@@ -257,21 +261,43 @@ def scrape_ciklum() -> tuple[list[Job], int]:
                 if not _title_match(title):
                     continue
                 country = j.get("PrimaryLocationCountry", "")
-                mode = j.get("WorkplaceTypeCode", "").replace("ORA_REMOTE", "Remote").replace("ORA_", "").title()
+                mode = (j.get("WorkplaceTypeCode") or "").replace("ORA_REMOTE", "Remote").replace("ORA_", "").title()
                 location = " · ".join(filter(None, [mode, country]))
                 jobs.append(Job(
-                    id=_make_id("ciklum", jid),
+                    id=_make_id(source_label, jid),
                     title=title,
-                    company="Ciklum",
+                    company=company_name,
                     url=f"{job_base}/{jid}",
                     description="",
-                    source="Ciklum",
+                    source=source_label,
                     location=location,
                 ))
-            offset += 25
+            offset += page_size
     except Exception as e:
-        print(f"[Ciklum] Error: {e}")
+        print(f"[{source_label}] Error: {e}")
     return jobs, len(seen)
+
+
+def scrape_ciklum() -> tuple[list[Job], int]:
+    return _scrape_oracle_hcm(
+        api_host="ialmme.fa.ocs.oraclecloud.com",
+        site_number="CX_1001",
+        job_base="https://explore-jobs.ciklum.com/en/sites/ciklum-career/job",
+        company_name="Ciklum",
+        source_label="Ciklum",
+        referer="https://explore-jobs.ciklum.com/",
+    )
+
+
+def scrape_vertiv() -> tuple[list[Job], int]:
+    return _scrape_oracle_hcm(
+        api_host="egup.fa.us2.oraclecloud.com",
+        site_number="CX",
+        job_base="https://egup.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX/job",
+        company_name="Vertiv",
+        source_label="Vertiv",
+        page_size=100,
+    )
 
 def scrape_intellias() -> tuple[list[Job], int]:
     jobs = []
