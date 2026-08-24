@@ -50,6 +50,7 @@ SOURCES = [
     "boosta",
     "amo",
     "gismart",
+    "vertiv",
     # UA job boards
     "dou",
     "djinni",
